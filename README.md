@@ -33,7 +33,7 @@ var Questions = require('question-store');
 
 ### Questions
 
-### [Questions](index.js#L24)
+### [Questions](index.js#L23)
 
 Create an instance of `Questions` with the given `options`.
 
@@ -73,7 +73,7 @@ questions.set({
 });
 ```
 
-### [.question](index.js#L90)
+### [.question](index.js#L92)
 
 Get the `question` instance stored for the given `name`. This is the entire `Question` object, with all answers for all locales and directories.
 
@@ -88,7 +88,7 @@ Get the `question` instance stored for the given `name`. This is the entire `Que
 var name = questions.question('name');
 ```
 
-### [.get](index.js#L111)
+### [.get](index.js#L116)
 
 Get the answer object for question `name`, for the current locale and cwd.
 
@@ -109,7 +109,7 @@ var name = questions.get('name', 'fr');
 //=> {name: 'Jean'}
 ```
 
-### [.isAnswered](index.js#L127)
+### [.isAnswered](index.js#L132)
 
 Return true if question `name` has been answered for the current locale and the current working directory.
 
@@ -124,7 +124,7 @@ Return true if question `name` has been answered for the current locale and the 
 question.isAnswered(locale);
 ```
 
-### [.del](index.js#L142)
+### [.del](index.js#L147)
 
 Delete the answer for question `name` for the current (or given) locale.
 
@@ -139,7 +139,21 @@ Delete the answer for question `name` for the current (or given) locale.
 question.del(locale);
 ```
 
-### [.answer](index.js#L166)
+### [.erase](index.js#L162)
+
+Erase all answers for question `name` from the file system.
+
+**Params**
+
+* `name` **{String}**: Question name
+
+**Example**
+
+```js
+question.erase(name);
+```
+
+### [.answer](index.js#L189)
 
 Get the answer value for question `name`, for the current locale and cwd. Similar to `questions.get`, but only returns the answer value instead of the entire object.
 
@@ -160,7 +174,7 @@ var name = questions.answer('name', 'fr');
 //=> 'Jean'
 ```
 
-### [.ask](index.js#L188)
+### [.ask](index.js#L211)
 
 Ask one or more questions, with the given `options` and callback.
 
@@ -195,9 +209,9 @@ Create new `Question` store `name`, with the given `options`.
 var question = new Question(name, options);
 ```
 
-### [.set](lib/question.js#L48)
+### [.set](lib/question.js#L53)
 
-Update the answer to the question for the current (or given) locale, at the current working directory.
+Set the answer to the question for the current (or given) locale, at the current working directory.
 
 **Params**
 
@@ -209,7 +223,7 @@ Update the answer to the question for the current (or given) locale, at the curr
 question.set('foo');
 ```
 
-### [.get](lib/question.js#L64)
+### [.get](lib/question.js#L69)
 
 Get the answer for the current (or given) locale for the current working directory.
 
@@ -223,7 +237,7 @@ Get the answer for the current (or given) locale for the current working directo
 question.get(locale);
 ```
 
-### [.isAnswered](lib/question.js#L79)
+### [.isAnswered](lib/question.js#L84)
 
 Return true if the question has been answered for the current locale and the current working directory.
 
@@ -237,7 +251,35 @@ Return true if the question has been answered for the current locale and the cur
 question.isAnswered(locale);
 ```
 
-### [.ask](lib/question.js#L100)
+### [.setDefault](lib/question.js#L99)
+
+Set the default answer to use for the current (or given) locale, at the current working directory.
+
+**Params**
+
+* `locale` **{String}**: Optionally pass a locale
+
+**Example**
+
+```js
+question.setDefault('foo');
+```
+
+### [.hasDefault](lib/question.js#L116)
+
+Return true if the question has been given a default answer for the current (or given) locale, at the current working directory.
+
+**Params**
+
+* `locale` **{String}**: Optionally pass a locale
+
+**Example**
+
+```js
+question.hasDefault('foo');
+```
+
+### [.ask](lib/question.js#L137)
 
 Ask the question.
 
@@ -258,7 +300,7 @@ question.ask({force: true}, function(err, answer) {
 });
 ```
 
-### [.del](lib/question.js#L133)
+### [.del](lib/question.js#L179)
 
 Delete the answer for the current (or given) locale.
 
@@ -272,7 +314,17 @@ Delete the answer for the current (or given) locale.
 question.del(locale);
 ```
 
-### [.save](lib/question.js#L148)
+### [.erase](lib/question.js#L193)
+
+Delete the answer store (all answers for the question) from the file system.
+
+**Example**
+
+```js
+question.erase();
+```
+
+### [.save](lib/question.js#L208)
 
 Persist the answer for the current locale and cwd to disk.
 
