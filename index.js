@@ -7,7 +7,6 @@
 
 'use strict';
 
-var async = require('async');
 var Question = require('./lib/question');
 var utils = require('./lib/utils');
 
@@ -23,8 +22,9 @@ var utils = require('./lib/utils');
 
 function Questions(options) {
   this.options = options || {};
-  this.questions = {};
   this.answers = {};
+  this.cache = {};
+  this.paths = {};
   this.queue = [];
 }
 
@@ -54,24 +54,26 @@ function Questions(options) {
 
 Questions.prototype.set = function(name, val, options) {
   if (utils.isObject(name)) {
-    options = val;
-    val = name;
-    name = val.name;
+    return this.set(name.name, name, val);
   }
 
   if (typeof val === 'string') {
     val = { message: val };
   }
 
-  if (!utils.isObject(val)) {
-    throw new TypeError('expected question value to be a string or object');
+  if (typeof name === 'string' && !val) {
+    val = { message: name };
   }
 
-  val = utils.extend({type: 'input'}, options, val);
-  var question = new Question(name, val);
-  this.questions[name] = question;
-  this.answers[name] = question.data;
-  this.queue.push(name);
+  var defaults = { type: 'input', message: name };
+  var config = utils.extend(defaults, options, val);
+
+  var question = new Question(name, config);
+  question.cwd = this.cwd;
+
+  this.cache[question.name] = question;
+  this.answers[question.name] = question.data;
+  this.queue.push(question.name);
   return this;
 };
 
@@ -88,7 +90,10 @@ Questions.prototype.set = function(name, val, options) {
  */
 
 Questions.prototype.question = function(name) {
-  return this.questions[name] || {};
+  if (!this.cache.hasOwnProperty(name)) {
+    throw new Error('question-store cannot find question "' + name + '"');
+  }
+  return this.cache[name];
 };
 
 /**
@@ -141,6 +146,24 @@ Questions.prototype.isAnswered = function(name, locale) {
 
 Questions.prototype.del = function(name, locale) {
   this.question(name).del(locale);
+  return this;
+};
+
+/**
+ * Erase all answers for question `name` from the file system.
+ *
+ * ```js
+ * question.erase(name);
+ * ```
+ * @param {String} `name` Question name
+ * @api public
+ */
+
+Questions.prototype.erase = function(name) {
+  var question = this.question(name);
+  if (typeof question.erase === 'function') {
+    this.question(name).erase();
+  }
   return this;
 };
 
@@ -201,13 +224,13 @@ Questions.prototype.ask = function(names, options, cb) {
 
   var opts = utils.extend({}, this.options, options);
   var keys = utils.arrayify(names || this.queue);
-  var questions = this.questions;
+  var questions = this.cache;
 
-  if (this.options.forceAll === true) {
+  if (opts.forceAll === true) {
     opts.force = true;
   }
 
-  async.reduce(keys, {}, function(answers, key, next) {
+  utils.async.reduce(keys, {}, function(answers, key, next) {
     var question = questions[key];
 
     question.ask(opts, function(err, answer) {
@@ -217,6 +240,23 @@ Questions.prototype.ask = function(names, options, cb) {
     });
   }, cb);
 };
+
+/**
+ * Getter/setter for answer cwd
+ */
+
+Object.defineProperty(Questions.prototype, 'cwd', {
+  set: function(cwd) {
+    this.paths.cwd = cwd;
+  },
+  get: function() {
+    if (this.paths.cwd) {
+      return this.paths.cwd;
+    }
+    var cwd = this.options.cwd || process.cwd();
+    return (this.paths.cwd = cwd);
+  }
+});
 
 /**
  * Expose `Questions`
