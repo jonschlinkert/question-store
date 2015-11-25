@@ -72,7 +72,7 @@ describe('Questions', function() {
     });
   });
 
-  describe.only('set', function() {
+  describe('set', function() {
     afterEach(function() {
       questions.erase('foo');
     });
