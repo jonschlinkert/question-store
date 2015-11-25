@@ -71,29 +71,10 @@ Questions.prototype.set = function(name, val, options) {
   var question = new Question(name, config);
   question.cwd = this.cwd;
 
-  this.cache[question.name] = question;
-  this.answers[question.name] = question.data;
+  utils.set(this.cache, question.name, question);
+  utils.set(this.answers, question.name, question.data);
   this.queue.push(question.name);
   return this;
-};
-
-/**
- * Get the `question` instance stored for the given `name`. This is the entire
- * `Question` object, with all answers for all locales and directories.
- *
- * ```js
- * var name = questions.question('name');
- * ```
- * @param {String} `name`
- * @return {Object} Returns the question instance.
- * @api public
- */
-
-Questions.prototype.question = function(name) {
-  if (!this.cache.hasOwnProperty(name)) {
-    throw new Error('question-store cannot find question "' + name + '"');
-  }
-  return this.cache[name];
 };
 
 /**
@@ -113,8 +94,53 @@ Questions.prototype.question = function(name) {
  * @api public
  */
 
-Questions.prototype.get = function(name, locale) {
+Questions.prototype.get = function(name) {
+  return utils.get(this.cache, name);
+};
+
+/**
+ * Get the answer object for question `name`, for the current locale and cwd.
+ *
+ * ```js
+ * var name = questions.get('name');
+ * //=> {name: 'Jon'}
+ *
+ * // specify a locale
+ * var name = questions.get('name', 'fr');
+ * //=> {name: 'Jean'}
+ * ```
+ * @param {String} `name`
+ * @param {String} `locale`
+ * @return {Object} Returns the question object.
+ * @api public
+ */
+
+Questions.prototype.getAnswer = function(name, locale) {
   return this.question(name).get(locale);
+};
+
+/**
+ * Get the `question` instance stored for the given `name`. This is the entire
+ * `Question` object, with all answers for all locales and directories.
+ *
+ * ```js
+ * var name = questions.question('name');
+ * ```
+ * @param {String} `name`
+ * @return {Object} Returns the question instance.
+ * @api public
+ */
+
+Questions.prototype.question = function(name) {
+  if (arguments.length > 1 || typeof name !== 'string') {
+    return this.set.apply(this, arguments);
+  }
+
+  var question = utils.get(this.cache, name);
+  if (typeof question === 'undefined') {
+    throw new Error('question-store cannot find question "' + name + '"');
+  }
+  return question;
 };
 
 /**
