@@ -25,6 +25,7 @@ function Questions(options) {
     return new Questions(options);
   }
   this.options = options || {};
+  this.inquirer = this.options.inquirer || utils.inquirer;
   this.answers = {};
   this.groups = {};
   this.cache = {};
