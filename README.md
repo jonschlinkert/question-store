@@ -47,9 +47,9 @@ Create an instance of `Questions` with the given `options`.
 var Questions = new Questions(options);
 ```
 
-### [.set](index.js#L55)
+### [.set](index.js#L56)
 
-Queue up a question to be asked at a later point. Creates an instance of [Question](#question), so any `Question` options or settings may be used.
+Cache a question to be asked at a later point. Creates an instance of [Question](#question), so any `Question` options or settings may be used.
 
 **Params**
 
@@ -73,7 +73,23 @@ questions.set({
 });
 ```
 
-### [.get](index.js#L97)
+### [.setDefault](index.js#L74)
+
+Add a question that, when answered, will save the value as the default value to be used for the current locale.
+
+**Params**
+
+* `name` **{String}**
+* `val` **{Object}**
+* `options` **{Object}**
+
+**Example**
+
+```js
+questions.setDefault('author.name', 'What is your name?');
+```
+
+### [.get](index.js#L112)
 
 Get the answer object for question `name`, for the current locale and cwd.
 
@@ -94,7 +110,7 @@ var name = questions.get('name', 'fr');
 //=> {name: 'Jean'}
 ```
 
-### [.getAnswer](index.js#L118)
+### [.getAnswer](index.js#L133)
 
 Get the answer object for question `name`, for the current locale and cwd.
 
@@ -115,7 +131,7 @@ var name = questions.get('name', 'fr');
 //=> {name: 'Jean'}
 ```
 
-### [.question](index.js#L134)
+### [.question](index.js#L149)
 
 Get the `question` instance stored for the given `name`. This is the entire `Question` object, with all answers for all locales and directories.
 
@@ -130,7 +146,7 @@ Get the `question` instance stored for the given `name`. This is the entire `Que
 var name = questions.question('name');
 ```
 
-### [.isAnswered](index.js#L158)
+### [.isAnswered](index.js#L173)
 
 Return true if question `name` has been answered for the current locale and the current working directory.
 
@@ -145,7 +161,7 @@ Return true if question `name` has been answered for the current locale and the 
 question.isAnswered(locale);
 ```
 
-### [.del](index.js#L173)
+### [.del](index.js#L188)
 
 Delete the answer for question `name` for the current (or given) locale.
 
@@ -160,7 +176,7 @@ Delete the answer for question `name` for the current (or given) locale.
 question.del(locale);
 ```
 
-### [.erase](index.js#L188)
+### [.erase](index.js#L203)
 
 Erase all answers for question `name` from the file system.
 
@@ -174,7 +190,7 @@ Erase all answers for question `name` from the file system.
 question.erase(name);
 ```
 
-### [.answer](index.js#L215)
+### [.answer](index.js#L239)
 
 Get the answer value for question `name`, for the current locale and cwd. Similar to `questions.get`, but only returns the answer value instead of the entire object.
 
@@ -195,7 +211,7 @@ var name = questions.answer('name', 'fr');
 //=> 'Jean'
 ```
 
-### [.ask](index.js#L237)
+### [.ask](index.js#L261)
 
 Ask one or more questions, with the given `options` and callback.
 
@@ -230,7 +246,7 @@ Create new `Question` store `name`, with the given `options`.
 var question = new Question(name, options);
 ```
 
-### [.set](lib/question.js#L53)
+### [.set](lib/question.js#L65)
 
 Set the answer to the question for the current (or given) locale, at the current working directory.
 
@@ -244,7 +260,7 @@ Set the answer to the question for the current (or given) locale, at the current
 question.set('foo');
 ```
 
-### [.get](lib/question.js#L69)
+### [.get](lib/question.js#L81)
 
 Get the answer for the current (or given) locale for the current working directory.
 
@@ -258,7 +274,31 @@ Get the answer for the current (or given) locale for the current working directo
 question.get(locale);
 ```
 
-### [.isAnswered](lib/question.js#L84)
+### [.del](lib/question.js#L96)
+
+Delete the answer for the current (or given) locale and the current working directory.
+
+**Params**
+
+* `locale` **{String}**: Optionally pass a locale
+
+**Example**
+
+```js
+question.del(locale);
+```
+
+### [.erase](lib/question.js#L110)
+
+Delete the answer store (all answers for the question) from the file system.
+
+**Example**
+
+```js
+question.erase();
+```
+
+### [.isAnswered](lib/question.js#L126)
 
 Return true if the question has been answered for the current locale and the current working directory.
 
@@ -272,7 +312,7 @@ Return true if the question has been answered for the current locale and the cur
 question.isAnswered(locale);
 ```
 
-### [.setDefault](lib/question.js#L99)
+### [.setDefault](lib/question.js#L141)
 
 Set the default answer to use for the current (or given) locale, at the current working directory.
 
@@ -286,7 +326,21 @@ Set the default answer to use for the current (or given) locale, at the current 
 question.setDefault('foo');
 ```
 
-### [.hasDefault](lib/question.js#L116)
+### [.getDefault](lib/question.js#L156)
+
+Get the default answer for the current (or given) locale
+
+**Params**
+
+* `locale` **{String}**: Optionally pass a locale
+
+**Example**
+
+```js
+question.getDefault();
+```
+
+### [.hasDefault](lib/question.js#L173)
 
 Return true if the question has been given a default answer for the current (or given) locale, at the current working directory.
 
@@ -300,7 +354,7 @@ Return true if the question has been given a default answer for the current (or 
 question.hasDefault('foo');
 ```
 
-### [.ask](lib/question.js#L137)
+### [.ask](lib/question.js#L194)
 
 Ask the question.
 
@@ -321,31 +375,7 @@ question.ask({force: true}, function(err, answer) {
 });
 ```
 
-### [.del](lib/question.js#L186)
-
-Delete the answer for the current (or given) locale.
-
-**Params**
-
-* `locale` **{String}**: Optionally pass a locale
-
-**Example**
-
-```js
-question.del(locale);
-```
-
-### [.erase](lib/question.js#L200)
-
-Delete the answer store (all answers for the question) from the file system.
-
-**Example**
-
-```js
-question.erase();
-```
-
-### [.save](lib/question.js#L215)
+### [.save](lib/question.js#L244)
 
 Persist the answer for the current locale and cwd to disk.
 
@@ -387,4 +417,4 @@ Released under the MIT license.
 
 ***
 
-_This file was generated by [verb-cli](https://github.com/assemble/verb-cli) on November 25, 2015._
+_This file was generated by [verb-cli](https://github.com/assemble/verb-cli) on November 27, 2015._
