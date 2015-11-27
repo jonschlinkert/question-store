@@ -1,8 +1,8 @@
 'use strict';
 
 var Question = require('../lib/question');
-var question = new Question('name', {
-  save: false,
+var question = new Question('author.name', {
+  force: true,
   message: 'What is your name?',
   type: 'input'
 });
