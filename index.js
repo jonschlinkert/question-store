@@ -23,14 +23,15 @@ var utils = require('./lib/utils');
 function Questions(options) {
   this.options = options || {};
   this.answers = {};
+  this.groups = {};
   this.cache = {};
   this.paths = {};
   this.queue = [];
 }
 
 /**
- * Queue up a question to be asked at a later point. Creates an
- * instance of [Question](#question), so any `Question` options or settings
+ * Cache a question to be asked at a later point. Creates an instance
+ * of [Question](#question), so any `Question` options or settings
  * may be used.
  *
  * ```js
@@ -53,28 +54,42 @@ function Questions(options) {
  */
 
 Questions.prototype.set = function(name, val, options) {
-  if (utils.isObject(name)) {
-    return this.set(name.name, name, val);
-  }
+  this.addQuestion.apply(this, arguments);
+  return this;
+};
 
-  if (typeof val === 'string') {
-    val = { message: val };
-  }
+/**
+ * Add a question that, when answered, will save the value as the default
+ * value to be used for the current locale.
+ *
+ * ```js
+ * questions.setDefault('author.name', 'What is your name?');
+ * ```
+ * @param {String} `name`
+ * @param {Object} `val`
+ * @param {Object} `options`
+ * @api public
+ */
 
-  if (typeof name === 'string' && !val) {
-    val = { message: name };
-  }
+Questions.prototype.setDefault = function(name, val, options) {
+  var question = this.addQuestion.apply(this, arguments);
+  question.options.isDefault = true;
+  return this;
+};
 
-  var defaults = { type: 'input', message: name };
-  var config = utils.extend(defaults, options, val);
+/**
+ * Private method for normalizing question objects.
+ */
 
-  var question = new Question(name, config);
+Questions.prototype.addQuestion = function(name, val, options) {
+  var opts = utils.extend({}, this.options, options);
+  var question = new Question(name, val, opts);
   question.cwd = this.cwd;
 
   utils.set(this.cache, question.name, question);
   utils.set(this.answers, question.name, question.data);
   this.queue.push(question.name);
-  return this;
+  return question;
 };
 
 /**
@@ -136,7 +151,7 @@ Questions.prototype.question = function(name) {
     return this.set.apply(this, arguments);
   }
 
-  var question = utils.get(this.cache, name);
+  var question = this.get(name);
   if (typeof question === 'undefined') {
     throw new Error('question-store cannot find question "' + name + '"');
   }
@@ -188,7 +203,16 @@ Questions.prototype.del = function(name, locale) {
 Questions.prototype.erase = function(name) {
   var question = this.question(name);
   if (typeof question.erase === 'function') {
-    this.question(name).erase();
+    question.erase();
+    return this;
+  }
+  if (utils.hasQuestion(question)) {
+    for (var key in question) {
+      var val = question[key];
+      if (typeof val.erase === 'function') {
+        val.erase();
+      }
+    }
   }
   return this;
 };
@@ -249,22 +273,54 @@ Questions.prototype.ask = function(names, options, cb) {
   }
 
   var opts = utils.extend({}, this.options, options);
-  var keys = utils.arrayify(names || this.queue);
-  var questions = this.cache;
-
   if (opts.forceAll === true) {
     opts.force = true;
   }
 
-  utils.async.reduce(keys, {}, function(answers, key, next) {
-    var question = questions[key];
+  var questions = this.buildQueue(names);
 
+  utils.async.reduce(questions, {}, function(answers, question, next) {
     question.ask(opts, function(err, answer) {
       if (err) return next(err);
-      answers[key] = answer[key];
+
+      var key = question.name;
+      utils.set(answers, key, utils.get(answer, key));
       next(null, answers);
     });
   }, cb);
+};
+
+/**
+ * Build the object of questions to ask.
+ *
+ * @param {Array|String} keys
+ * @return {Object}
+ */
+
+Questions.prototype.buildQueue = function(keys) {
+  if (!keys) {
+    keys = Object.keys(this.cache);
+  }
+  keys = utils.arrayify(keys);
+  var len = keys.length, i = -1;
+  var arr = [];
+
+  while (++i < len) {
+    var key = keys[i];
+    if (utils.isObject(key) && key.isQuestion) {
+      arr.push(key);
+      continue;
+    }
+
+    for (var j = 0; j < this.queue.length; j++) {
+      var ele = this.queue[j];
+      if (utils.hasKey(key, ele)) {
+        var question = this.get(ele);
+        arr.push(question);
+      }
+    }
+  }
+  return arr;
 };
 
 /**
