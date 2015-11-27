@@ -90,7 +90,7 @@ questions.setData('foo', 'bar');
 questions.setData({foo: 'bar'});
 ```
 
-### [.hasData](index.js#L109)
+### [.hasData](index.js#L110)
 
 Return true if property `key` has a value on `questions.data`.
 
@@ -105,7 +105,7 @@ Return true if property `key` has a value on `questions.data`.
 questions.hasData('abc');
 ```
 
-### [.getData](index.js#L126)
+### [.getData](index.js#L127)
 
 Get the value of property `key` from `questions.data`.
 
@@ -122,7 +122,7 @@ questions.getData('foo');
 //=> 'bar'
 ```
 
-### [.setDefault](index.js#L143)
+### [.setDefault](index.js#L144)
 
 Add a question that, when answered, will save the value as the default value to be used for the current locale.
 
@@ -138,7 +138,7 @@ Add a question that, when answered, will save the value as the default value to 
 questions.setDefault('author.name', 'What is your name?');
 ```
 
-### [.get](index.js#L182)
+### [.get](index.js#L183)
 
 Get the answer object for question `name`, for the current locale and cwd.
 
@@ -159,7 +159,7 @@ var name = questions.get('name', 'fr');
 //=> {name: 'Jean'}
 ```
 
-### [.question](index.js#L198)
+### [.question](index.js#L199)
 
 Get the `question` instance stored for the given `name`. This is the entire `Question` object, with all answers for all locales and directories.
 
@@ -174,7 +174,7 @@ Get the `question` instance stored for the given `name`. This is the entire `Que
 var name = questions.question('name');
 ```
 
-### [.isAnswered](index.js#L221)
+### [.isAnswered](index.js#L222)
 
 Return true if question `name` has been answered for the current locale and the current working directory.
 
@@ -189,7 +189,7 @@ Return true if question `name` has been answered for the current locale and the 
 question.isAnswered(locale);
 ```
 
-### [.del](index.js#L236)
+### [.del](index.js#L237)
 
 Delete the answer for question `name` for the current (or given) locale.
 
@@ -204,7 +204,7 @@ Delete the answer for question `name` for the current (or given) locale.
 question.del(locale);
 ```
 
-### [.deleteAll](index.js#L263)
+### [.deleteAll](index.js#L264)
 
 Delete answers for all questions for the current (or given) locale.
 
@@ -218,7 +218,7 @@ Delete answers for all questions for the current (or given) locale.
 question.deleteAll(locale);
 ```
 
-### [.erase](index.js#L281)
+### [.erase](index.js#L282)
 
 Erase all answers for question `name` from the file system.
 
@@ -232,7 +232,7 @@ Erase all answers for question `name` from the file system.
 question.erase(name);
 ```
 
-### [.ask](index.js#L326)
+### [.ask](index.js#L327)
 
 Ask one or more questions, with the given `options` and callback.
 
