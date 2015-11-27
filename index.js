@@ -92,6 +92,7 @@ Questions.prototype.setData = function(key, val) {
     return this.visit('setData', key);
   }
   utils.set(this.data, key, val);
+  this.emit('data', key, val);
   return this;
 };
 
@@ -349,11 +350,13 @@ Questions.prototype.ask = function(names, options, cb) {
     utils.async.reduce(questions, {}, function(answers, question, next) {
       var key = question.name;
 
+      self.emit('ask', key, question, answers);
+
       question.ask(opts, function(err, answer) {
         if (err) return next(err);
 
         var res = utils.get(answer, key);
-        self.emit('answer', key, res);
+        self.emit('answer', key, res, question);
         utils.set(answers, key, res);
 
         setImmediate(function() {
