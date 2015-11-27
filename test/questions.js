@@ -23,9 +23,9 @@ describe('Questions', function() {
       assert(questions instanceof Questions);
     });
 
-    it('should expose an "answers" property', function() {
-      assert(questions.answers);
-      assert.equal(typeof questions.answers, 'object');
+    it('should expose an "data" property', function() {
+      assert(questions.data);
+      assert.equal(typeof questions.data, 'object');
     });
 
     it('should expose a "questions" property', function() {
@@ -72,6 +72,45 @@ describe('Questions', function() {
     });
   });
 
+  describe('data', function() {
+    afterEach(function() {
+      questions.data = {};
+    });
+
+    describe('setData', function() {
+      it('should set a property on `question.data`', function() {
+        questions.setData('a', 'b');
+        assert(questions.data.a);
+        assert.equal(questions.data.a, 'b');
+      });
+
+      it('should set an object on `question.data`', function() {
+        questions.setData({c: 'd'});
+        assert(questions.data.c);
+        assert.equal(questions.data.c, 'd');
+      });
+    });
+
+    describe('hasData', function() {
+      it('should return true if a property is on `question.data`', function() {
+        questions.setData('a', 'b');
+        assert.equal(questions.hasData('a'), true);
+      });
+
+      it('should return false if a property is not on `question.data`', function() {
+        questions.setData('a', 'b');
+        assert.equal(questions.hasData('zzz'), false);
+      });
+    });
+
+    describe('setData', function() {
+      it('should get a property from `question.data`', function() {
+        questions.setData('a', 'b');
+        assert.equal(questions.getData('a'), 'b');
+      });
+    });
+  });
+
   describe('set', function() {
     afterEach(function() {
       questions.erase('foo');
@@ -81,11 +120,6 @@ describe('Questions', function() {
       it('should add a property to "questions"', function() {
         questions.set('foo');
         assert(questions.cache.foo);
-      });
-
-      it('should add a property to "answers"', function() {
-        questions.set('foo');
-        assert(questions.answers.foo);
       });
     });
 

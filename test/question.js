@@ -27,9 +27,9 @@ describe('Question', function() {
       assert(question instanceof Question);
     });
 
-    it('should expose a "data" property', function() {
-      assert(question.data);
-      assert.equal(typeof question.data, 'object');
+    it('should expose a "answer" property', function() {
+      assert(question.answer);
+      assert.equal(typeof question.answer, 'object');
     });
 
     it('should expose a "set" method', function() {
@@ -69,18 +69,18 @@ describe('Question', function() {
   describe('set', function() {
     it('should set a value on [locale][cwd]', function() {
       question.set('foo');
-      assert(question.data.en[process.cwd()]);
+      assert(question.answer.data.en[process.cwd()]);
     });
 
     it('should set a value on the default locale, "en"', function() {
       question.set('foo');
-      assert(question.data.en[process.cwd()]);
+      assert(question.answer.data.en[process.cwd()]);
     });
 
     it('should set a value on the specified locale', function() {
       question.set('bar', 'es');
-      assert(question.data.es[process.cwd()]);
-      assert.equal(question.data.es[process.cwd()], 'bar');
+      assert(question.answer.data.es[process.cwd()]);
+      assert.equal(question.answer.data.es[process.cwd()], 'bar');
     });
   });
 
