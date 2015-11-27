@@ -223,7 +223,7 @@ describe('Question', function() {
       });
     });
 
-    it('should ask nested questions', function(cb) {
+    it.skip('should ask nested questions', function(cb) {
       question = new Question('author.name', {
         message: 'What is your name?',
         inquirer: {
