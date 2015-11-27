@@ -84,6 +84,40 @@ describe('Question', function() {
     });
   });
 
+  describe('get', function() {
+    it('should get a value', function() {
+      question.set('foo');
+      assert(question.get() === 'foo');
+    });
+
+    it('should get a value on the default locale, "en"', function() {
+      question.set('foo');
+      assert(question.get() === 'foo');
+    });
+
+    it('should get a value on the specified locale', function() {
+      question.set('a', 'es');
+      question.set('b', 'en');
+      assert(question.get() === 'b');
+      assert(question.get('es') === 'a');
+    });
+  });
+
+  describe('getDefault', function() {
+    it('should get a default value', function() {
+      question.setDefault('abc');
+      question.set('foo');
+      assert(question.getDefault() === 'abc');
+    });
+
+    it('should get a default value on the specified locale', function() {
+      question.setDefault('a', 'es');
+      question.setDefault('b', 'en');
+      assert(question.getDefault() === 'b');
+      assert(question.getDefault('es') === 'a');
+    });
+  });
+
   describe('has', function() {
     it('should return true if a value has been set for the cwd', function() {
       question.set('foo');
@@ -203,7 +237,9 @@ describe('Question', function() {
         }
       });
 
-      question.ask();
+      question.ask(function() {
+
+      });
     });
   });
 });
