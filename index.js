@@ -7,6 +7,7 @@
 
 'use strict';
 
+var Emitter = require('component-emitter');
 var Question = require('./lib/question');
 var utils = require('./lib/utils');
 
@@ -24,14 +25,24 @@ function Questions(options) {
   if (!(this instanceof Questions)) {
     return new Questions(options);
   }
+
   this.options = options || {};
+  if (this.options.force === true) {
+    this.options.forceAll = true;
+  }
+
   this.inquirer = this.options.inquirer || utils.inquirer;
-  this.answers = {};
-  this.groups = {};
   this.cache = {};
   this.paths = {};
   this.queue = [];
+  this.data = {};
 }
+
+/**
+ * Inherit emitter
+ */
+
+Emitter(Questions.prototype);
 
 /**
  * Cache a question to be asked at a later point. Creates an instance
@@ -63,6 +74,60 @@ Questions.prototype.set = function(name, val, options) {
 };
 
 /**
+ * Set data to be used for answering questions, or as default answers
+ * when `force` is true.
+ *
+ * ```js
+ * questions.setData('foo', 'bar');
+ * // or
+ * questions.setData({foo: 'bar'});
+ * ```
+ * @param {String|Object} `key` Property name to set, or object to extend onto `questions.data`
+ * @param {any} `val` The value to assign to `key`
+ * @api public
+ */
+
+Questions.prototype.setData = function(key, val) {
+  if (utils.isObject(key)) {
+    return this.visit('setData', key);
+  }
+  utils.set(this.data, key, val);
+  return this;
+};
+
+/**
+ * Return true if property `key` has a value on `questions.data`.
+ *
+ * ```js
+ * questions.hasData('abc');
+ * ```
+ * @param {String} `key` The property to lookup.
+ * @return {Boolean}
+ * @api public
+ */
+
+Questions.prototype.hasData = function(key) {
+  return utils.has(this.data, key);
+};
+
+/**
+ * Get the value of property `key` from `questions.data`.
+ *
+ * ```js
+ * questions.setData('foo', 'bar');
+ * questions.getData('foo');
+ * //=> 'bar'
+ * ```
+ * @param {String} `key` The property to get.
+ * @return {any} Returns the value of property `key`
+ * @api public
+ */
+
+Questions.prototype.getData = function(key) {
+  return utils.get(this.data, key);
+};
+
+/**
  * Add a question that, when answered, will save the value as the default
  * value to be used for the current locale.
  *
@@ -82,7 +147,8 @@ Questions.prototype.setDefault = function(name, val, options) {
 };
 
 /**
- * Private method for normalizing question objects.
+ * Private method for normalizing question objects and adding them
+ * to the cache.
  */
 
 Questions.prototype.addQuestion = function(name, val, options) {
@@ -90,8 +156,8 @@ Questions.prototype.addQuestion = function(name, val, options) {
   var question = new Question(name, val, opts);
   question.cwd = this.cwd;
 
+  this.emit('set', question.name, question);
   utils.set(this.cache, question.name, question);
-  utils.set(this.answers, question.name, question.data);
   this.queue.push(question.name);
   return question;
 };
@@ -118,27 +184,6 @@ Questions.prototype.get = function(name) {
 };
 
 /**
- * Get the answer object for question `name`, for the current locale and cwd.
- *
- * ```js
- * var name = questions.get('name');
- * //=> {name: 'Jon'}
- *
- * // specify a locale
- * var name = questions.get('name', 'fr');
- * //=> {name: 'Jean'}
- * ```
- * @param {String} `name`
- * @param {String} `locale`
- * @return {Object} Returns the question object.
- * @api public
- */
-
-Questions.prototype.getAnswer = function(name, locale) {
-  return this.question(name).get(locale);
-};
-
-/**
  * Get the `question` instance stored for the given `name`. This is the entire
  * `Question` object, with all answers for all locales and directories.
  *
@@ -151,10 +196,9 @@ Questions.prototype.getAnswer = function(name, locale) {
  */
 
 Questions.prototype.question = function(name) {
-  if (arguments.length > 1 || typeof name !== 'string') {
+  if (arguments.length > 1 || utils.isObject(name)) {
     return this.set.apply(this, arguments);
   }
-
   var question = this.get(name);
   if (typeof question === 'undefined') {
     throw new Error('question-store cannot find question "' + name + '"');
@@ -190,7 +234,37 @@ Questions.prototype.isAnswered = function(name, locale) {
  */
 
 Questions.prototype.del = function(name, locale) {
-  this.question(name).del(locale);
+  var question = this.question(name);
+  if (question && typeof question.del === 'function') {
+    question.del(locale);
+    return this;
+  }
+  if (utils.hasQuestion(question)) {
+    for (var key in question) {
+      var val = question[key];
+      if (val && typeof val.del === 'function') {
+        val.del(locale);
+      }
+    }
+  }
+  return this;
+};
+
+/**
+ * Delete answers for all questions for the current (or given) locale.
+ *
+ * ```js
+ * question.deleteAll(locale);
+ * ```
+ * @param {String} `locale` Optionally pass a locale
+ * @api public
+ */
+
+Questions.prototype.deleteAll = function(locale) {
+  var len = this.queue.length;
+  while (len--) {
+    this.del(this.queue[len], locale);
+  }
   return this;
 };
 
@@ -206,14 +280,14 @@ Questions.prototype.del = function(name, locale) {
 
 Questions.prototype.erase = function(name) {
   var question = this.question(name);
-  if (typeof question.erase === 'function') {
+  if (question && typeof question.erase === 'function') {
     question.erase();
     return this;
   }
   if (utils.hasQuestion(question)) {
     for (var key in question) {
       var val = question[key];
-      if (typeof val.erase === 'function') {
+      if (val && typeof val.erase === 'function') {
         val.erase();
       }
     }
@@ -222,30 +296,17 @@ Questions.prototype.erase = function(name) {
 };
 
 /**
- * Get the answer value for question `name`, for the current locale and cwd.
- * Similar to `questions.get`, but only returns the answer value instead
- * of the entire object.
+ * Erase answers for all questions from the file system.
  *
- * ```js
- * var name = questions.answer('name');
- * //=> 'Jon'
- *
- * // specify a locale
- * var name = questions.answer('name', 'fr');
- * //=> 'Jean'
- * ```
- * @param {String} `name`
- * @param {String} `locale`
- * @return {Object} Returns the question object.
- * @api public
+ * @return {String}
  */
 
-Questions.prototype.answer = function(name, locale) {
-  var answer = this.get(name, locale);
-  if (answer) {
-    return answer[name];
+Questions.prototype.eraseAll = function(name, locale) {
+  var len = this.queue.length;
+  while (len--) {
+    this.erase(this.queue[len], locale);
   }
-  return null;
+  return this;
 };
 
 /**
@@ -281,17 +342,26 @@ Questions.prototype.ask = function(names, options, cb) {
     opts.force = true;
   }
 
-  var questions = this.buildQueue(names);
+  var questions = this.buildQueue(names, opts.locale);
+  var self = this;
 
-  utils.async.reduce(questions, {}, function(answers, question, next) {
-    question.ask(opts, function(err, answer) {
-      if (err) return next(err);
-
+  setImmediate(function() {
+    utils.async.reduce(questions, {}, function(answers, question, next) {
       var key = question.name;
-      utils.set(answers, key, utils.get(answer, key));
-      next(null, answers);
-    });
-  }, cb);
+
+      question.ask(opts, function(err, answer) {
+        if (err) return next(err);
+
+        var res = utils.get(answer, key);
+        self.emit('answer', key, res);
+        utils.set(answers, key, res);
+
+        setImmediate(function() {
+          next(null, answers);
+        });
+      });
+    }, cb);
+  });
 };
 
 /**
@@ -301,10 +371,8 @@ Questions.prototype.ask = function(names, options, cb) {
  * @return {Object}
  */
 
-Questions.prototype.buildQueue = function(keys) {
-  if (!keys) {
-    keys = Object.keys(this.cache);
-  }
+Questions.prototype.buildQueue = function(keys, locale) {
+  if (!keys) keys = Object.keys(this.cache);
   keys = utils.arrayify(keys);
   var len = keys.length, i = -1;
   var arr = [];
@@ -320,11 +388,26 @@ Questions.prototype.buildQueue = function(keys) {
       var ele = this.queue[j];
       if (utils.hasKey(key, ele)) {
         var question = this.get(ele);
-        arr.push(question);
+        if (this.hasData(ele)) {
+          question.set(this.getData(ele), locale);
+        }
+        if (question) arr.push(question);
       }
     }
   }
   return arr;
+};
+
+/**
+ * Visit `method` over each property on the given `value`.
+ *
+ * @param {String} `method` The `questions` method to call.
+ * @param {Object} `val`
+ * @return {Object}
+ */
+
+Questions.prototype.visit = function(method, val) {
+  return utils.visit(this, method, val);
 };
 
 /**
