@@ -396,7 +396,7 @@ question.ask({force: true}, function(err, answer) {
 });
 ```
 
-### [.save](lib/question.js#L240)
+### [.save](lib/question.js#L242)
 
 Persist the answer for the current locale and cwd to disk.
 
