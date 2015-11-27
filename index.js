@@ -21,6 +21,9 @@ var utils = require('./lib/utils');
  */
 
 function Questions(options) {
+  if (!(this instanceof Questions)) {
+    return new Questions(options);
+  }
   this.options = options || {};
   this.answers = {};
   this.groups = {};
