@@ -16,6 +16,7 @@ function json(filename) {
 describe('Questions', function() {
   beforeEach(function() {
     questions = new Questions();
+    questions.cache = {};
   });
 
   describe('instance', function() {
@@ -226,51 +227,55 @@ describe('Questions', function() {
     });
   });
 
-  describe.skip('has', function() {
-    it('should return true if an answer has been given for the current directory', function() {
+  describe('delQuestion', function() {
+    it('should delete a question', function() {
+      questions.set('foo', 'What is foo?');
+      questions.set('bar', 'What is bar?');
+      assert(questions.cache.foo);
+      assert(questions.cache.bar);
+      questions.delQuestion('bar');
+      assert(questions.cache.foo);
+      assert(!questions.cache.bar);
+    });
+
+    it('should remove a question name from the queue', function() {
+      questions.set('foo', 'What is foo?');
+      questions.set('bar', 'What is bar?');
+      assert(questions.queue.indexOf('foo') === 0);
+      assert(questions.queue.indexOf('bar') === 1);
+
+      questions.delQuestion('bar');
+
+      assert(questions.queue.indexOf('foo') === 0);
+      assert(questions.queue.indexOf('bar') === -1);
+    });
+  });
+
+  describe('has', function() {
+    it('should return true if an answer has been given for the cwd', function() {
       questions.set('foo');
       var question = questions.get('foo');
+      question.set('bar');
       assert(questions.isAnswered('foo'));
+      question.del();
+    });
+
+    it('should return false if an answer has not been given for the cwd', function() {
+      questions.set('foo');
+      var question = questions.get('foo');
+      assert(!questions.isAnswered('foo'));
     });
 
     it('should return true if a value has been set for the default locale', function() {
       questions.set('foo');
+      questions.get('foo')
+        .setDefault('bar');
       assert(questions.isAnswered('foo'));
     });
 
-    it('should return true if a default value has been set', function() {
-      questions.set('foo');
-      questions.setDefault('bar');
-      assert(questions.hasDefault('bar'));
-    });
-
     it('should return false if a default value has not been set', function() {
-      questions.set('foo');
-      assert(!questions.hasDefault());
-    });
-
-    it('should return false if a value has not been set for the default locale', function() {
-      assert(!questions.isAnswered());
-    });
-
-    it('should return true if a value has been set for the given locale', function() {
-      questions.set('foo', 'es');
-      assert(questions.isAnswered('es'));
-    });
-
-    it('should return false if a value has not been set for the given locale', function() {
-      questions.set('foo');
-      assert(!questions.isAnswered('es'));
-    });
-
-    it('should return true if a default value has been set for a locale', function() {
-      questions.setDefault('bar', 'es');
-      assert(questions.hasDefault('es'));
-    });
-
-    it('should return false if a default value has not been set for a locale', function() {
-      questions.setDefault('baz');
-      assert(!questions.hasDefault('es'));
-    });
+      questions.set('slsjkls');
+      assert(!questions.isAnswered('slsjkls'));
+    });;
   });
 });

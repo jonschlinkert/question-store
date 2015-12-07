@@ -1,7 +1,7 @@
 {
   "name": "question-store",
   "description": "Ask questions, persist the answers. Basic support for i18n and storing answers based on current working directory.",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "homepage": "https://github.com/jonschlinkert/question-store",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "repository": "jonschlinkert/question-store",
@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "answer-store": "^0.1.2",
+    "arr-union": "^3.0.0",
     "async": "^1.5.0",
     "define-property": "^0.2.5",
     "extend-shallow": "^2.0.1",
@@ -33,7 +34,8 @@
     "object-visit": "^0.3.4",
     "option-cache": "^3.2.0",
     "resolve-dir": "^0.1.0",
-    "set-value": "^0.3.1"
+    "set-value": "^0.3.1",
+    "use": "^1.1.2"
   },
   "devDependencies": {
     "mocha": "*"
@@ -49,6 +51,9 @@
         "question-cache",
         "inquirer"
       ]
-    }
+    },
+    "reflinks": [
+      "question-cache"
+    ]
   }
 }

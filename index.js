@@ -7,6 +7,7 @@
 
 'use strict';
 
+var use = require('use');
 var util = require('util');
 var Options = require('option-cache');
 var Question = require('./lib/question');
@@ -33,10 +34,14 @@ function Questions(options) {
   }
 
   this.inquirer = this.options.inquirer || utils.inquirer;
+  this.enqueued = false;
+  this.groupMap = {};
+  this.groups = {};
   this.cache = {};
   this.paths = {};
   this.queue = [];
   this.data = {};
+  use(this);
 }
 
 /**
@@ -72,6 +77,110 @@ util.inherits(Questions, Options);
 Questions.prototype.set = function(name, val, options) {
   this.addQuestion.apply(this, arguments);
   return this;
+};
+
+/**
+ * Get the answer object for question `name`, for the current locale and cwd.
+ *
+ * ```js
+ * var name = questions.get('name');
+ * //=> {name: 'Jon'}
+ *
+ * // specify a locale
+ * var name = questions.get('name', 'fr');
+ * //=> {name: 'Jean'}
+ * ```
+ * @param {String} `name`
+ * @param {String} `locale`
+ * @return {Object} Returns the question object.
+ * @api public
+ */
+
+Questions.prototype.get = function(name) {
+  return this.cache[name] || this.groups[name];
+};
+
+/**
+ * Delete the answer for question `name` for the current (or given) locale.
+ *
+ * ```js
+ * question.del(locale);
+ * ```
+ * @param {String} `name` Question name
+ * @param {String} `locale` Optionally pass a locale
+ * @api public
+ */
+
+Questions.prototype.del = function(name, locale) {
+  var question = this.question(name);
+  if (question && typeof question.del === 'function') {
+    question.del(locale);
+    return this;
+  }
+  if (utils.hasQuestion(question)) {
+    for (var key in question) {
+      var val = question[key];
+      if (val && typeof val.del === 'function') {
+        val.del(locale);
+      }
+    }
+  }
+  return this;
+};
+
+/**
+ * Create a question group from the given key. This is used in `addQuestion`
+ * to add namespaced questions to groups.
+ *
+ * ```js
+ * questions
+ *   .set('author.name', 'Author name?')
+ *   .set('author.url', 'Author url?')
+ *
+ * // console.log(questions.groups);
+ * //=> {author: ['author.name', 'author.url']}
+ * ```
+ * @param {String} `key`
+ * @return {Object}
+ */
+
+Questions.prototype.group = function(key) {
+  var segs = key.split('.');
+  var name = segs[0];
+  var item = segs[1];
+  if (!item) return this;
+
+  this.groups[name] = this.groups[name] || [];
+  utils.union(this.groups[name], [key]);
+  this.groupMap[key] = name;
+  return this;
+};
+
+/**
+ * Get a group with the given `key`. If `key` has a dot, only the substring
+ * before the dot is used for the lookup.
+ *
+ * ```js
+ * questions
+ *   .set('author.name', 'Author name?')
+ *   .set('author.url', 'Author url?')
+ *   .set('project.name', 'Project name?')
+ *   .set('project.url', 'Project url?')
+ *
+ * var group = questions.getGroup('author');
+ * //=> ['author.name', 'author.url']
+ *
+ * questions.ask(group, function(err, answers) {
+ *   // do stuff with answers
+ * });
+ * ```
+ * @param {String} `key`
+ * @return {Object}
+ * @api public
+ */
+
+Questions.prototype.getGroup = function(key) {
+  return this.groups[key.split('.').shift()];
 };
 
 /**
@@ -149,43 +258,6 @@ Questions.prototype.setDefault = function(name, val, options) {
 };
 
 /**
- * Private method for normalizing question objects and adding them
- * to the cache.
- */
-
-Questions.prototype.addQuestion = function(name, val, options) {
-  var opts = utils.extend({}, this.options, options);
-  var question = new Question(name, val, opts);
-  question.cwd = this.cwd;
-
-  this.emit('set', question.name, question);
-  utils.set(this.cache, question.name, question);
-  this.queue.push(question.name);
-  return question;
-};
-
-/**
- * Get the answer object for question `name`, for the current locale and cwd.
- *
- * ```js
- * var name = questions.get('name');
- * //=> {name: 'Jon'}
- *
- * // specify a locale
- * var name = questions.get('name', 'fr');
- * //=> {name: 'Jean'}
- * ```
- * @param {String} `name`
- * @param {String} `locale`
- * @return {Object} Returns the question object.
- * @api public
- */
-
-Questions.prototype.get = function(name) {
-  return utils.get(this.cache, name);
-};
-
-/**
  * Get the `question` instance stored for the given `name`. This is the entire
  * `Question` object, with all answers for all locales and directories.
  *
@@ -209,6 +281,52 @@ Questions.prototype.question = function(name) {
 };
 
 /**
+ * Private method for normalizing question objects and adding them
+ * to the cache.
+ */
+
+Questions.prototype.addQuestion = function(name, val, options) {
+  var opts = utils.extend({}, this.options, options);
+  var question = new Question(name, val, opts);
+  question.cwd = this.cwd;
+
+  this.emit('set', question.name, question);
+  this.cache[question.name] = question;
+
+  this.queue.push(question.name);
+  this.group(question.name);
+  this.run(question);
+  return question;
+};
+
+/**
+ * Delete a question.
+ *
+ * ```js
+ * question.deleteQuestion(name);
+ * ```
+ * @param {String} `name` The question to delete.
+ * @api public
+ */
+
+Questions.prototype.delQuestion = function(name) {
+  if (Array.isArray(name)) {
+    name.forEach(this.deleteQuestion.bind(this));
+  } else if (this.cache.hasOwnProperty(name)) {
+    var groupName = this.groupMap[name];
+    if (groupName) {
+      var group = this.groups[this.groupMap[name]];
+      group.splice(group.indexOf(name), 1);
+    }
+    delete this.cache[name];
+    this.unqueue(name);
+  } else if (this.groups.hasOwnProperty(name)) {
+    this.groups[name].forEach(this.deleteQuestion.bind(this));
+  }
+  return this;
+};
+
+/**
  * Return true if question `name` has been answered for the current locale
  * and the current working directory.
  *
@@ -222,34 +340,6 @@ Questions.prototype.question = function(name) {
 
 Questions.prototype.isAnswered = function(name, locale) {
   return this.question(name).isAnswered(locale);
-};
-
-/**
- * Delete the answer for question `name` for the current (or given) locale.
- *
- * ```js
- * question.del(locale);
- * ```
- * @param {String} `name` Question name
- * @param {String} `locale` Optionally pass a locale
- * @api public
- */
-
-Questions.prototype.del = function(name, locale) {
-  var question = this.question(name);
-  if (question && typeof question.del === 'function') {
-    question.del(locale);
-    return this;
-  }
-  if (utils.hasQuestion(question)) {
-    for (var key in question) {
-      var val = question[key];
-      if (val && typeof val.del === 'function') {
-        val.del(locale);
-      }
-    }
-  }
-  return this;
 };
 
 /**
@@ -308,6 +398,26 @@ Questions.prototype.eraseAll = function(name, locale) {
   while (len--) {
     this.erase(this.queue[len], locale);
   }
+  return this;
+};
+
+/**
+ * Enqueue one or more questions to be asked.
+ *
+ * @return {String}
+ */
+
+Questions.prototype.enqueue = function(names) {
+  names = utils.arrayify(names).reduce(function(acc, name) {
+    return acc.concat(this.groups[name] || name);
+  }.bind(this), []);
+
+  // clear the queue if this is the first time `enqueue` is called
+  if (!this.enqueued) {
+    this.enqueued = true;
+    this.queue = [];
+  }
+  this.queue = utils.union(this.queue, names);
   return this;
 };
 
@@ -396,11 +506,14 @@ Questions.prototype.buildQueue = function(keys, locale) {
     }
 
     for (var j = 0; j < this.queue.length; j++) {
-      var ele = this.queue[j];
-      if (utils.hasKey(key, ele)) {
-        var question = this.get(ele);
-        if (this.hasData(ele)) {
-          question.set(this.getData(ele), locale);
+      var name = this.queue[j];
+      if (utils.hasKey(key, name)) {
+        var question = this.get(name);
+
+        // if data was set on `questions` for this question,
+        // transfer the data over to the question
+        if (this.hasData(name)) {
+          question.set(this.getData(name), locale);
         }
 
         if (question && queue.indexOf(question.name) === -1) {
@@ -411,6 +524,46 @@ Questions.prototype.buildQueue = function(keys, locale) {
     }
   }
   return arr;
+};
+
+/**
+ * Get a the index of question `name` from the queue.
+ *
+ * ```js
+ * questions.getIndex('author');
+ * //=> 1
+ * ```
+ * @param {String} `name`
+ * @return {Object}
+ * @api public
+ */
+
+Questions.prototype.getIndex = function(name) {
+  if (utils.isObject(name)) {
+    return this.queue.indexOf(name.name);
+  }
+  return this.queue.indexOf(name);
+};
+
+/**
+ * Remove a question from the queue.
+ *
+ * ```js
+ * console.log(questions.queue);
+ * //=> ['a', 'b', 'c'];
+ * questions.unqueue('a');
+ * ```
+ * @param {Object} `items` Object of views
+ * @api public
+ */
+
+Questions.prototype.unqueue = function(name) {
+  if (Array.isArray(name)) {
+    name.forEach(this.unqueue.bind(this));
+  } else {
+    this.queue.splice(this.getIndex(name), 1);
+  }
+  return this;
 };
 
 /**
