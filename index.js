@@ -7,7 +7,8 @@
 
 'use strict';
 
-var Emitter = require('component-emitter');
+var util = require('util');
+var Options = require('option-cache');
 var Question = require('./lib/question');
 var utils = require('./lib/utils');
 
@@ -26,7 +27,7 @@ function Questions(options) {
     return new Questions(options);
   }
 
-  this.options = options || {};
+  Options.apply(this, arguments);
   if (this.options.force === true) {
     this.options.forceAll = true;
   }
@@ -39,10 +40,10 @@ function Questions(options) {
 }
 
 /**
- * Inherit emitter
+ * Mixin `Emitter` methods
  */
 
-Emitter(Questions.prototype);
+util.inherits(Questions, Options);
 
 /**
  * Cache a question to be asked at a later point. Creates an instance
@@ -346,6 +347,9 @@ Questions.prototype.ask = function(names, options, cb) {
   var questions = this.buildQueue(names, opts.locale);
   var self = this;
 
+  // force exit if "ctrl+c" is pressed
+  utils.forceExit();
+
   setImmediate(function() {
     utils.async.reduce(questions, {}, function(answers, question, next) {
       var key = question.name;
@@ -378,12 +382,16 @@ Questions.prototype.buildQueue = function(keys, locale) {
   if (!keys) keys = Object.keys(this.cache);
   keys = utils.arrayify(keys);
   var len = keys.length, i = -1;
+  var queue = [];
   var arr = [];
 
   while (++i < len) {
     var key = keys[i];
     if (utils.isObject(key) && key.isQuestion) {
-      arr.push(key);
+      if (queue.indexOf(key.name) === -1) {
+        queue.push(key.name);
+        arr.push(key);
+      }
       continue;
     }
 
@@ -394,7 +402,11 @@ Questions.prototype.buildQueue = function(keys, locale) {
         if (this.hasData(ele)) {
           question.set(this.getData(ele), locale);
         }
-        if (question) arr.push(question);
+
+        if (question && queue.indexOf(question.name) === -1) {
+          queue.push(question.name);
+          arr.push(question);
+        }
       }
     }
   }
