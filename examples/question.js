@@ -2,6 +2,7 @@
 
 var Question = require('../lib/question');
 var question = new Question('author.name', {
+  dest: 'examples/question',
   force: true,
   message: 'What is your name?',
   type: 'input'
