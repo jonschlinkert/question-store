@@ -9,6 +9,7 @@
 
 var use = require('use');
 var util = require('util');
+var path = require('path');
 var Options = require('option-cache');
 var Question = require('./lib/question');
 var utils = require('./lib/utils');
@@ -31,6 +32,10 @@ function Questions(options) {
   Options.apply(this, arguments);
   if (this.options.force === true) {
     this.options.forceAll = true;
+  }
+
+  if (!this.options.name && !this.options.dest) {
+    throw new Error('expected "options.name" or "options.dest" to be a string');
   }
 
   this.inquirer = this.options.inquirer || utils.inquirer;
@@ -80,18 +85,33 @@ Questions.prototype.set = function(name, val, options) {
 };
 
 /**
- * Get the answer object for question `name`, for the current locale and cwd.
+ * Add a question that will have its answer stored as a default
+ * value.
+ *
+ * ```js
+ * questions.setDefault('author.name', 'What is your name?');
+ * ```
+ * @param {String} `name`
+ * @param {Object} `val`
+ * @param {Object} `options`
+ * @api public
+ */
+
+Questions.prototype.setDefault = function(name, val, options) {
+  var question = this.set.apply(this, arguments);
+  question.options.isDefault = true;
+  return this;
+};
+
+/**
+ * Get question `name`, or group `name` if question is not found.
+ * You can also do a direct lookup using `quesions.cache['foo']`.
  *
  * ```js
  * var name = questions.get('name');
- * //=> {name: 'Jon'}
- *
- * // specify a locale
- * var name = questions.get('name', 'fr');
- * //=> {name: 'Jean'}
+ * //=> question object
  * ```
  * @param {String} `name`
- * @param {String} `locale`
  * @return {Object} Returns the question object.
  * @api public
  */
@@ -124,6 +144,200 @@ Questions.prototype.del = function(name, locale) {
         val.del(locale);
       }
     }
+  }
+  return this;
+};
+
+/**
+ * Get the answer for question `name` at the current cwd.
+ *
+ * Optionally specify a locale to get, otherwise the default locale's
+ * answer is returend.
+ *
+ * ```js
+ * var name = questions.getAnswer('name');
+ * //=> {name: 'Jon'}
+ *
+ * // specify a locale
+ * var name = questions.getAnswer('name', 'fr');
+ * //=> {name: 'Jean'}
+ * ```
+ * @param {String} `name`
+ * @param {String} `locale`
+ * @return {Object} Returns the question object.
+ * @api public
+ */
+
+Questions.prototype.getAnswer = function(name, locale) {
+  var question = this.get(name);
+  if (question) {
+    return question.get(locale);
+  }
+};
+
+/**
+ * Get the default answer object for question `name` for the
+ * current locale. Optionally specify a locale to get the
+ * default answer for that locale.
+ *
+ * ```js
+ * var name = questions.getDefaultAnswer('name');
+ * //=> {name: 'Jon'}
+ *
+ * // specify a locale
+ * var name = questions.getDefaultAnswer('name', 'fr');
+ * //=> {name: 'Jean'}
+ * ```
+ * @param {String} `name`
+ * @param {String} `locale`
+ * @return {Object} Returns the question object.
+ * @api public
+ */
+
+Questions.prototype.getDefaultAnswer = function(name, locale) {
+  var question = this.get(name);
+  if (question) {
+    return question.getDefault(locale);
+  }
+};
+
+/**
+ * Return true if question `name` has been answered for the current locale
+ * and the current working directory.
+ *
+ * ```js
+ * question.isAnswered(locale);
+ * ```
+ * @param {String} `name` Question name
+ * @param {String} `locale` Optionally pass a locale
+ * @api public
+ */
+
+Questions.prototype.isAnswered = function(name, locale) {
+  return this.question(name).isAnswered(locale);
+};
+
+/**
+ * Set data to be used for answering questions, or as default answers
+ * when `force` is true.
+ *
+ * ```js
+ * questions.setData('foo', 'bar');
+ * // or
+ * questions.setData({foo: 'bar'});
+ * ```
+ * @param {String|Object} `key` Property name to set, or object to extend onto `questions.data`
+ * @param {any} `val` The value to assign to `key`
+ * @api public
+ */
+
+Questions.prototype.setData = function(key, val) {
+  if (utils.isObject(key)) {
+    return this.visit('setData', key);
+  }
+  utils.set(this.data, key, val);
+  this.emit('data', key, val);
+  return this;
+};
+
+/**
+ * Return true if property `key` has a value on `questions.data`.
+ *
+ * ```js
+ * questions.hasData('abc');
+ * ```
+ * @param {String} `key` The property to lookup.
+ * @return {Boolean}
+ * @api public
+ */
+
+Questions.prototype.hasData = function(key) {
+  return utils.has(this.data, key);
+};
+
+/**
+ * Get the value of property `key` from `questions.data`.
+ *
+ * ```js
+ * questions.setData('foo', 'bar');
+ * questions.getData('foo');
+ * //=> 'bar'
+ * ```
+ * @param {String} `key` The property to get.
+ * @return {any} Returns the value of property `key`
+ * @api public
+ */
+
+Questions.prototype.getData = function(key) {
+  return utils.get(this.data, key);
+};
+
+/**
+ * Get the `question` instance stored for the given `name`. This is the entire
+ * `Question` object, with all answers for all locales and directories.
+ *
+ * ```js
+ * var name = questions.question('name');
+ * ```
+ * @param {String} `name`
+ * @return {Object} Returns the question instance.
+ * @api public
+ */
+
+Questions.prototype.question = function(name) {
+  if (arguments.length > 1 || utils.isObject(name)) {
+    return this.set.apply(this, arguments);
+  }
+  var question = this.get(name, this.options.locale);
+  if (typeof question === 'undefined') {
+    throw new Error('question-store cannot find question "' + name + '"');
+  }
+  return question;
+};
+
+/**
+ * Private method for normalizing question objects and adding them
+ * to the cache.
+ */
+
+Questions.prototype.addQuestion = function(name, val, options) {
+  var opts = utils.extend({}, this.options, options);
+  var question = new Question(name, val, opts);
+  question.dest = this.dest;
+  question.cwd = this.cwd;
+
+  this.emit('set', question.name, question);
+  this.cache[question.name] = question;
+
+  this.queue.push(question.name);
+  this.group(question.name);
+  this.run(question);
+  return question;
+};
+
+/**
+ * Delete a question.
+ *
+ * ```js
+ * question.deleteQuestion(name);
+ * ```
+ * @param {String} `name` The question to delete.
+ * @api public
+ */
+
+Questions.prototype.delQuestion = function(name) {
+  if (Array.isArray(name)) {
+    name.forEach(this.deleteQuestion.bind(this));
+  } else if (this.cache.hasOwnProperty(name)) {
+    var groupName = this.groupMap[name];
+    if (groupName) {
+      var group = this.groups[this.groupMap[name]];
+      group.splice(group.indexOf(name), 1);
+    }
+    delete this.cache[name];
+    this.unqueue(name);
+  } else if (this.groups.hasOwnProperty(name)) {
+    this.groups[name].forEach(this.deleteQuestion.bind(this));
   }
   return this;
 };
@@ -184,165 +398,6 @@ Questions.prototype.getGroup = function(key) {
 };
 
 /**
- * Set data to be used for answering questions, or as default answers
- * when `force` is true.
- *
- * ```js
- * questions.setData('foo', 'bar');
- * // or
- * questions.setData({foo: 'bar'});
- * ```
- * @param {String|Object} `key` Property name to set, or object to extend onto `questions.data`
- * @param {any} `val` The value to assign to `key`
- * @api public
- */
-
-Questions.prototype.setData = function(key, val) {
-  if (utils.isObject(key)) {
-    return this.visit('setData', key);
-  }
-  utils.set(this.data, key, val);
-  this.emit('data', key, val);
-  return this;
-};
-
-/**
- * Return true if property `key` has a value on `questions.data`.
- *
- * ```js
- * questions.hasData('abc');
- * ```
- * @param {String} `key` The property to lookup.
- * @return {Boolean}
- * @api public
- */
-
-Questions.prototype.hasData = function(key) {
-  return utils.has(this.data, key);
-};
-
-/**
- * Get the value of property `key` from `questions.data`.
- *
- * ```js
- * questions.setData('foo', 'bar');
- * questions.getData('foo');
- * //=> 'bar'
- * ```
- * @param {String} `key` The property to get.
- * @return {any} Returns the value of property `key`
- * @api public
- */
-
-Questions.prototype.getData = function(key) {
-  return utils.get(this.data, key);
-};
-
-/**
- * Add a question that, when answered, will save the value as the default
- * value to be used for the current locale.
- *
- * ```js
- * questions.setDefault('author.name', 'What is your name?');
- * ```
- * @param {String} `name`
- * @param {Object} `val`
- * @param {Object} `options`
- * @api public
- */
-
-Questions.prototype.setDefault = function(name, val, options) {
-  var question = this.addQuestion.apply(this, arguments);
-  question.options.isDefault = true;
-  return this;
-};
-
-/**
- * Get the `question` instance stored for the given `name`. This is the entire
- * `Question` object, with all answers for all locales and directories.
- *
- * ```js
- * var name = questions.question('name');
- * ```
- * @param {String} `name`
- * @return {Object} Returns the question instance.
- * @api public
- */
-
-Questions.prototype.question = function(name) {
-  if (arguments.length > 1 || utils.isObject(name)) {
-    return this.set.apply(this, arguments);
-  }
-  var question = this.get(name);
-  if (typeof question === 'undefined') {
-    throw new Error('question-store cannot find question "' + name + '"');
-  }
-  return question;
-};
-
-/**
- * Private method for normalizing question objects and adding them
- * to the cache.
- */
-
-Questions.prototype.addQuestion = function(name, val, options) {
-  var opts = utils.extend({}, this.options, options);
-  var question = new Question(name, val, opts);
-  question.cwd = this.cwd;
-
-  this.emit('set', question.name, question);
-  this.cache[question.name] = question;
-
-  this.queue.push(question.name);
-  this.group(question.name);
-  this.run(question);
-  return question;
-};
-
-/**
- * Delete a question.
- *
- * ```js
- * question.deleteQuestion(name);
- * ```
- * @param {String} `name` The question to delete.
- * @api public
- */
-
-Questions.prototype.delQuestion = function(name) {
-  if (Array.isArray(name)) {
-    name.forEach(this.deleteQuestion.bind(this));
-  } else if (this.cache.hasOwnProperty(name)) {
-    var groupName = this.groupMap[name];
-    if (groupName) {
-      var group = this.groups[this.groupMap[name]];
-      group.splice(group.indexOf(name), 1);
-    }
-    delete this.cache[name];
-    this.unqueue(name);
-  } else if (this.groups.hasOwnProperty(name)) {
-    this.groups[name].forEach(this.deleteQuestion.bind(this));
-  }
-  return this;
-};
-
-/**
- * Return true if question `name` has been answered for the current locale
- * and the current working directory.
- *
- * ```js
- * question.isAnswered(locale);
- * ```
- * @param {String} `name` Question name
- * @param {String} `locale` Optionally pass a locale
- * @api public
- */
-
-Questions.prototype.isAnswered = function(name, locale) {
-  return this.question(name).isAnswered(locale);
-};
-
-/**
  * Delete answers for all questions for the current (or given) locale.
  *
  * ```js
@@ -398,26 +453,6 @@ Questions.prototype.eraseAll = function(name, locale) {
   while (len--) {
     this.erase(this.queue[len], locale);
   }
-  return this;
-};
-
-/**
- * Enqueue one or more questions to be asked.
- *
- * @return {String}
- */
-
-Questions.prototype.enqueue = function(names) {
-  names = utils.arrayify(names).reduce(function(acc, name) {
-    return acc.concat(this.groups[name] || name);
-  }.bind(this), []);
-
-  // clear the queue if this is the first time `enqueue` is called
-  if (!this.enqueued) {
-    this.enqueued = true;
-    this.queue = [];
-  }
-  this.queue = utils.union(this.queue, names);
   return this;
 };
 
@@ -546,6 +581,32 @@ Questions.prototype.getIndex = function(name) {
 };
 
 /**
+ * Enqueue one or more questions to be asked.
+ *
+ * @return {String}
+ */
+
+Questions.prototype.enqueue = function(names, options) {
+  names = [].concat.apply([], [].slice.call(arguments));
+  if (utils.isObject(names[names.length - 1])) {
+    options = names.pop();
+  }
+
+  names.reduce(function(acc, name) {
+    return acc.concat(this.groups[name] || name);
+  }.bind(this), []);
+
+  // clear the queue if this is the first time `enqueue` is called
+  if (!this.enqueued) {
+    this.enqueued = true;
+    this.queue = [];
+  }
+
+  this.queue = utils.union(this.queue, names);
+  return this;
+};
+
+/**
  * Remove a question from the queue.
  *
  * ```js
@@ -577,6 +638,30 @@ Questions.prototype.unqueue = function(name) {
 Questions.prototype.visit = function(method, val) {
   return utils.visit(this, method, val);
 };
+
+/**
+ * Getter/setter for answer dest
+ */
+
+Object.defineProperty(Questions.prototype, 'dest', {
+  set: function(dest) {
+    this.paths.dest = dest;
+  },
+  get: function() {
+    if (this.paths.dest) {
+      return this.paths.dest;
+    }
+
+    if (this.options.dest) {
+      var dest = path.resolve(utils.resolveDir(this.options.dest));
+      return (this.paths.dest = dest);
+    }
+
+    var name = path.join(utils.gm, this.options.name, 'answers');
+    var dest = path.resolve(utils.resolveDir(name));
+    return (this.paths.dest = dest);
+  }
+});
 
 /**
  * Getter/setter for answer cwd
