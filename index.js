@@ -34,10 +34,6 @@ function Questions(options) {
     this.options.forceAll = true;
   }
 
-  if (!this.options.name && !this.options.dest) {
-    throw new Error('expected "options.name" or "options.dest" to be a string');
-  }
-
   this.inquirer = this.options.inquirer || utils.inquirer;
   this.enqueued = false;
   this.groupMap = {};
@@ -46,6 +42,10 @@ function Questions(options) {
   this.paths = {};
   this.queue = [];
   this.data = {};
+
+  if (!this.options.storeName && !this.options.dest) {
+    this.option('storeName', utils.project(this.cwd));
+  }
   use(this);
 }
 
@@ -118,6 +118,22 @@ Questions.prototype.setDefault = function(name, val, options) {
 
 Questions.prototype.get = function(name) {
   return this.cache[name] || this.groups[name];
+};
+
+/**
+ * Returns true if `questions.cache` or `questions.groups` has
+ * question `name`.
+ *
+ * ```js
+ * var name = questions.has('name');
+ * //=> true
+ * ```
+ * @return {String} The name of the question to check
+ * @api public
+ */
+
+Questions.prototype.has = function(name) {
+  return !!(this.cache[name] || this.groups[name]);
 };
 
 /**
@@ -302,10 +318,10 @@ Questions.prototype.question = function(name) {
 
 Questions.prototype.addQuestion = function(name, val, options) {
   var opts = utils.extend({}, this.options, options);
-  var question = new Question(name, val, opts);
-  question.dest = this.dest;
-  question.cwd = this.cwd;
+  opts.dest = this.dest;
+  opts.cwd = this.cwd;
 
+  var question = new Question(name, val, opts);
   this.emit('set', question.name, question);
   this.cache[question.name] = question;
 
@@ -489,16 +505,13 @@ Questions.prototype.ask = function(names, options, cb) {
     opts.force = true;
   }
 
+  names = names || Object.keys(this.cache);
   var questions = this.buildQueue(names, opts.locale);
   var self = this;
-
-  // force exit if "ctrl+c" is pressed
-  utils.forceExit();
 
   setImmediate(function() {
     utils.async.reduce(questions, {}, function(answers, question, next) {
       var key = question.name;
-
       self.emit('ask', key, question, answers);
 
       question.ask(opts, function(err, answer) {
@@ -531,18 +544,23 @@ Questions.prototype.buildQueue = function(keys, locale) {
   var arr = [];
 
   while (++i < len) {
-    var key = keys[i];
-    if (utils.isObject(key) && key.isQuestion) {
-      if (queue.indexOf(key.name) === -1) {
-        queue.push(key.name);
-        arr.push(key);
+    var val = keys[i];
+
+    if (typeof val === 'string') {
+      val = this.get(val);
+    }
+
+    if (utils.isObject(val) && val.isQuestion) {
+      if (queue.indexOf(val.name) === -1) {
+        queue.push(val.name);
+        arr.push(val);
       }
       continue;
     }
 
     for (var j = 0; j < this.queue.length; j++) {
       var name = this.queue[j];
-      if (utils.hasKey(key, name)) {
+      if (utils.hasKey(val, name)) {
         var question = this.get(name);
 
         // if data was set on `questions` for this question,
@@ -652,14 +670,16 @@ Object.defineProperty(Questions.prototype, 'dest', {
       return this.paths.dest;
     }
 
+    if (this.options.storeName) {
+      var dir = utils.resolveDir('~/answers');
+      var dest = path.resolve(dir, this.options.storeName);
+      return (this.paths.dest = dest);
+    }
+
     if (this.options.dest) {
       var dest = path.resolve(utils.resolveDir(this.options.dest));
       return (this.paths.dest = dest);
     }
-
-    var name = path.join(utils.gm, this.options.name, 'answers');
-    var dest = path.resolve(utils.resolveDir(name));
-    return (this.paths.dest = dest);
   }
 });
 
