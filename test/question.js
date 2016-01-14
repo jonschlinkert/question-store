@@ -230,22 +230,23 @@ describe('Question', function() {
       });
     });
 
-    it.skip('should ask nested questions', function(cb) {
+    it('should ask nested questions', function(cb) {
       question = new Question('author.name', {
         message: 'What is your name?',
         inquirer: {
-          prompt: function(question) {
+          prompt: function(question, next) {
             assert(question);
             assert.equal(question.type, 'input');
             assert.equal(question.name, 'author.name');
             assert.equal(question.message, 'What is your name?');
-            cb();
+            next('Foo');
           }
         }
       });
 
-      question.ask(function() {
-
+      question.ask(function(err, answers) {
+        assert(answers.author.name === 'Foo');
+        cb();
       });
     });
   });
