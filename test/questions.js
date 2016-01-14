@@ -15,7 +15,7 @@ function json(filename) {
 
 describe('Questions', function() {
   beforeEach(function() {
-    questions = new Questions();
+    questions = new Questions({debug: true});
     questions.cache = {};
   });
 
@@ -252,18 +252,26 @@ describe('Questions', function() {
   });
 
   describe('has', function() {
+    beforeEach(function() {
+      questions = new Questions({debug: true});
+      afterEach(function() {
+        questions.eraseAll();
+      });
+    });
+
     it('should return true if an answer has been given for the cwd', function() {
       questions.set('foo');
       var question = questions.get('foo');
-      question.set('bar');
+      question.setAnswer('bar');
       assert(questions.isAnswered('foo'));
-      question.del();
+      question.delAnswer();
     });
 
     it('should return false if an answer has not been given for the cwd', function() {
-      questions.set('foo');
-      var question = questions.get('foo');
-      assert(!questions.isAnswered('foo'));
+      questions.set('zzz');
+      assert(!questions.isAnswered('zzz'));
+      questions.setAnswer('zzz', 'yyy');
+      assert(questions.isAnswered('zzz'));
     });
 
     it('should return true if a value has been set for the default locale', function() {

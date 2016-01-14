@@ -19,7 +19,7 @@ describe('Question', function() {
   });
 
   afterEach(function() {
-    question.erase();
+    question.eraseAnswer();
   });
 
   describe('instance', function() {
@@ -33,15 +33,15 @@ describe('Question', function() {
     });
 
     it('should expose a "set" method', function() {
-      assert.equal(typeof question.set, 'function');
+      assert.equal(typeof question.setAnswer, 'function');
     });
 
     it('should expose a "get" method', function() {
-      assert.equal(typeof question.get, 'function');
+      assert.equal(typeof question.getAnswer, 'function');
     });
 
     it('should expose a "del" method', function() {
-      assert.equal(typeof question.del, 'function');
+      assert.equal(typeof question.delAnswer, 'function');
     });
 
     it('should expose a "isAnswered" method', function() {
@@ -68,17 +68,17 @@ describe('Question', function() {
 
   describe('set', function() {
     it('should set a value on [locale][cwd]', function() {
-      question.set('foo');
+      question.setAnswer('foo');
       assert(question.answer.data.en[process.cwd()]);
     });
 
     it('should set a value on the default locale, "en"', function() {
-      question.set('foo');
+      question.setAnswer('foo');
       assert(question.answer.data.en[process.cwd()]);
     });
 
     it('should set a value on the specified locale', function() {
-      question.set('bar', 'es');
+      question.setAnswer('bar', 'es');
       assert(question.answer.data.es[process.cwd()]);
       assert.equal(question.answer.data.es[process.cwd()], 'bar');
     });
@@ -86,27 +86,27 @@ describe('Question', function() {
 
   describe('get', function() {
     it('should get a value', function() {
-      question.set('foo');
-      assert(question.get() === 'foo');
+      question.setAnswer('foo');
+      assert(question.getAnswer() === 'foo');
     });
 
     it('should get a value on the default locale, "en"', function() {
-      question.set('foo');
-      assert(question.get() === 'foo');
+      question.setAnswer('foo');
+      assert(question.getAnswer() === 'foo');
     });
 
     it('should get a value on the specified locale', function() {
-      question.set('a', 'es');
-      question.set('b', 'en');
-      assert(question.get() === 'b');
-      assert(question.get('es') === 'a');
+      question.setAnswer('a', 'es');
+      question.setAnswer('b', 'en');
+      assert(question.getAnswer() === 'b');
+      assert(question.getAnswer('es') === 'a');
     });
   });
 
   describe('getDefault', function() {
     it('should get a default value', function() {
       question.setDefault('abc');
-      question.set('foo');
+      question.setAnswer('foo');
       assert(question.getDefault() === 'abc');
     });
 
@@ -118,25 +118,32 @@ describe('Question', function() {
     });
   });
 
+  describe('isForced', function() {
+    it('should return true if the question will be forced', function() {
+      question.setAnswer('foo');
+      assert(question.isAnswered());
+    });
+  });
+
   describe('has', function() {
     it('should return true if a value has been set for the cwd', function() {
-      question.set('foo');
+      question.setAnswer('foo');
       assert(question.isAnswered());
     });
 
     it('should return true if a value has been set for the default locale', function() {
-      question.set('foo');
+      question.setAnswer('foo');
       assert(question.isAnswered());
     });
 
     it('should return true if a default value has been set', function() {
-      question.set('foo');
+      question.setAnswer('foo');
       question.setDefault('bar');
       assert(question.hasDefault());
     });
 
     it('should return false if a default value has not been set', function() {
-      question.set('foo');
+      question.setAnswer('foo');
       assert(!question.hasDefault());
     });
 
@@ -145,12 +152,12 @@ describe('Question', function() {
     });
 
     it('should return true if a value has been set for the given locale', function() {
-      question.set('foo', 'es');
+      question.setAnswer('foo', 'es');
       assert(question.isAnswered('es'));
     });
 
     it('should return false if a value has not been set for the given locale', function() {
-      question.set('foo');
+      question.setAnswer('foo');
       assert(!question.isAnswered('es'));
     });
 
@@ -173,7 +180,7 @@ describe('Question', function() {
     });
 
     afterEach(function() {
-      question.erase();
+      question.eraseAnswer();
     });
 
     it('should pass the question object to inquirer', function(cb) {
@@ -196,7 +203,7 @@ describe('Question', function() {
     });
 
     it('should not ask a question that has an answer', function(cb) {
-      question.set('Jon');
+      question.setAnswer('Jon');
 
       question.ask(function(err, answer) {
         assert(!err);
@@ -212,7 +219,7 @@ describe('Question', function() {
         cb(null, 'slslslslslsl');
       };
 
-      question.set('Jon');
+      question.setAnswer('Jon');
       question.options.force = true;
 
       question.ask(function(err, answer) {
