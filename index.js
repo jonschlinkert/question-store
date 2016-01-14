@@ -235,35 +235,9 @@ Questions.prototype.delAnswer = function(name, locale) {
  */
 
 Questions.prototype.setDefault = function(name, val, options) {
-  var question = this.set.apply(this, arguments);
-  question.options.isDefault = true;
+  var question = this.addQuestion.apply(this, arguments);
+  question.setDefault(this.options.locale);
   return this;
-};
-
-/**
- * Set the default answer object for question `name` for the
- * current locale. Optionally specify a locale to set the
- * default answer for that locale.
- *
- * ```js
- * var name = questions.setDefault('name');
- * //=> {name: 'Jon'}
- *
- * // specify a locale
- * var name = questions.setDefault('name', 'fr');
- * //=> {name: 'Jean'}
- * ```
- * @param {String} `name`
- * @param {String} `locale`
- * @return {Object} Returns the question object.
- * @api public
- */
-
-Questions.prototype.setDefault = function(name, locale) {
-  var question = this.get(name);
-  if (question) {
-    return question.setDefault(locale);
-  }
 };
 
 /**
