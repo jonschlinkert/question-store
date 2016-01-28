@@ -1,10 +1,10 @@
 'use strict';
 
-var match = require('question-match');
+var force = require('question-force');
 var Questions = require('..');
 var questions = new Questions();
 
-questions.use(match());
+questions.use(force());
 questions.setData(require('../package'))
   .set('author.name', 'Author name?')
   .set('author.username', 'Author username?')
@@ -13,10 +13,7 @@ questions.setData(require('../package'))
   .set('project.name', 'What is the project name?')
   .set('project.desc', 'What is the project description?');
 
-questions.match('*.name')
-  .on('ask', function(key, question) {
-    question.force();
-  })
+questions.force(/^project/)
   .ask(function(err, answer) {
     console.log(answer)
   });

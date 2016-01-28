@@ -3,7 +3,7 @@
 var Questions = require('..');
 var questions = new Questions();
 
-questions.option('init', 'name');
+questions.option('init', 'project');
 questions
   .set('author.name', 'Author name?')
   .set('author.username', 'Author username?')
