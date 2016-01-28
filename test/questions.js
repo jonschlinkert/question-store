@@ -73,45 +73,6 @@ describe('Questions', function() {
     });
   });
 
-  describe('data', function() {
-    afterEach(function() {
-      questions.data = {};
-    });
-
-    describe('setData', function() {
-      it('should set a property on `question.data`', function() {
-        questions.setData('a', 'b');
-        assert(questions.data.a);
-        assert.equal(questions.data.a, 'b');
-      });
-
-      it('should set an object on `question.data`', function() {
-        questions.setData({c: 'd'});
-        assert(questions.data.c);
-        assert.equal(questions.data.c, 'd');
-      });
-    });
-
-    describe('hasData', function() {
-      it('should return true if a property is on `question.data`', function() {
-        questions.setData('a', 'b');
-        assert.equal(questions.hasData('a'), true);
-      });
-
-      it('should return false if a property is not on `question.data`', function() {
-        questions.setData('a', 'b');
-        assert.equal(questions.hasData('zzz'), false);
-      });
-    });
-
-    describe('setData', function() {
-      it('should get a property from `question.data`', function() {
-        questions.setData('a', 'b');
-        assert.equal(questions.getData('a'), 'b');
-      });
-    });
-  });
-
   describe('set', function() {
     afterEach(function() {
       questions.erase('foo');

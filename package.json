@@ -45,8 +45,9 @@
     "gulp-format-md": "^0.1.5",
     "gulp-istanbul": "^0.10.3",
     "gulp-mocha": "^2.2.0",
-    "micromatch": "^2.3.5",
-    "mocha": "*"
+    "mocha": "*",
+    "question-force": "^0.1.0",
+    "question-match": "^0.1.1"
   },
   "keywords": [
     "question",
