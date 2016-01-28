@@ -30,22 +30,7 @@ function Questions(options) {
   }
 
   Options.apply(this, arguments);
-  if (this.options.force === true) {
-    this.options.forceAll = true;
-  }
-
-  this.inquirer = this.options.inquirer || utils.inquirer;
-  this.enqueued = false;
-  this.groupMap = {};
-  this.groups = {};
-  this.cache = {};
-  this.paths = {};
-  this.queue = [];
-  this.data = {};
-
-  if (!this.options.storeName && !this.options.dest) {
-    this.option('storeName', utils.project(this.cwd));
-  }
+  this.initQuestions();
   use(this);
 }
 
@@ -54,6 +39,79 @@ function Questions(options) {
  */
 
 util.inherits(Questions, Options);
+
+/**
+ * Intialize question-store
+ */
+
+Questions.prototype.initQuestions = function() {
+  if (this.options.force === true) {
+    this.options.forceAll = true;
+  }
+  this.inquirer = this.options.inquirer || utils.inquirer;
+  this.enqueued = false;
+  this.groupMap = {};
+  this.groups = {};
+  this.cache = {};
+  this.paths = {};
+  this.queue = [];
+  this.data = {};
+};
+
+/**
+ * Set data to be used for answering questions, or as default answers
+ * when `force` is true.
+ *
+ * ```js
+ * questions.setData('foo', 'bar');
+ * // or
+ * questions.setData({foo: 'bar'});
+ * ```
+ * @param {String|Object} `key` Property name to set, or object to merge onto `questions.data`
+ * @param {any} `val` The value to assign to `key`
+ * @api public
+ */
+
+Questions.prototype.setData = function(key, val) {
+  if (utils.isObject(key)) {
+    return this.visit('setData', key);
+  }
+  utils.set(this.data, key, val);
+  this.emit('data', key, val);
+  return this;
+};
+
+/**
+ * Return true if property `key` has a value on `questions.data`.
+ *
+ * ```js
+ * questions.hasData('abc');
+ * ```
+ * @param {String} `key` The property to lookup.
+ * @return {Boolean}
+ * @api public
+ */
+
+Questions.prototype.hasData = function(key) {
+  return utils.has(this.data, key);
+};
+
+/**
+ * Get the value of property `key` from `questions.data`.
+ *
+ * ```js
+ * questions.setData('foo', 'bar');
+ * questions.getData('foo');
+ * //=> 'bar'
+ * ```
+ * @param {String} `key` The property to get.
+ * @return {any} Returns the value of property `key`
+ * @api public
+ */
+
+Questions.prototype.getData = function(key) {
+  return utils.get(this.data, key);
+};
 
 /**
  * Cache a question to be asked at a later point. Creates an instance
@@ -286,91 +344,13 @@ Questions.prototype.isAnswered = function(name, locale) {
 };
 
 /**
- * Set data to be used for answering questions, or as default answers
- * when `force` is true.
- *
- * ```js
- * questions.setData('foo', 'bar');
- * // or
- * questions.setData({foo: 'bar'});
- * ```
- * @param {String|Object} `key` Property name to set, or object to merge onto `questions.data`
- * @param {any} `val` The value to assign to `key`
- * @api public
- */
-
-Questions.prototype.setData = function(key, val) {
-  if (utils.isObject(key)) {
-    return this.visit('setData', key);
-  }
-  utils.set(this.data, key, val);
-  this.emit('data', key, val);
-  return this;
-};
-
-/**
- * Return true if property `key` has a value on `questions.data`.
- *
- * ```js
- * questions.hasData('abc');
- * ```
- * @param {String} `key` The property to lookup.
- * @return {Boolean}
- * @api public
- */
-
-Questions.prototype.hasData = function(key) {
-  return utils.has(this.data, key);
-};
-
-/**
- * Get the value of property `key` from `questions.data`.
- *
- * ```js
- * questions.setData('foo', 'bar');
- * questions.getData('foo');
- * //=> 'bar'
- * ```
- * @param {String} `key` The property to get.
- * @return {any} Returns the value of property `key`
- * @api public
- */
-
-Questions.prototype.getData = function(key) {
-  return utils.get(this.data, key);
-};
-
-/**
- * Get the `question` instance stored for the given `name`. This is the entire
- * `Question` object, with all answers for all locales and directories.
- *
- * ```js
- * var name = questions.question('name');
- * ```
- * @param {String} `name`
- * @return {Object} Returns the question instance.
- * @api public
- */
-
-Questions.prototype.question = function(name) {
-  if (arguments.length > 1 || utils.isObject(name)) {
-    return this.set.apply(this, arguments);
-  }
-  var question = this.get(name, this.options.locale);
-  if (typeof question === 'undefined') {
-    throw new Error('question-store cannot find question "' + name + '"');
-  }
-  return question;
-};
-
-/**
  * Private method for normalizing question objects and adding them
  * to the cache.
  */
 
 Questions.prototype.addQuestion = function(name, val, options) {
   var opts = utils.merge({}, this.options, options);
-  opts.dest = this.dest;
+  opts.path = this.path;
   opts.cwd = this.cwd;
 
   var question = new Question(name, val, opts);
@@ -632,7 +612,6 @@ Questions.prototype.buildQueue = function(keys, locale) {
         }
       }
     }
-
   }
   return arr;
 };
@@ -730,28 +709,39 @@ Questions.prototype.visit = function(method, val) {
 };
 
 /**
- * Getter/setter for answer dest
+ * Getter/setter for answer `path`
  */
 
-Object.defineProperty(Questions.prototype, 'dest', {
-  set: function(dest) {
-    this.paths.dest = dest;
+Object.defineProperty(Questions.prototype, 'path', {
+  set: function(path) {
+    this.paths.path = path;
   },
   get: function() {
-    if (this.paths.dest) {
-      return this.paths.dest;
+    if (this.paths.path) {
+      return this.paths.path;
     }
 
-    if (this.options.storeName) {
-      var dir = utils.resolveDir('~/answers');
-      var dest = path.resolve(dir, this.options.storeName);
-      return (this.paths.dest = dest);
+    if (this.options.path) {
+      var path = path.resolve(utils.resolveDir(this.options.path));
+      return (this.paths.path = path);
     }
+  }
+});
 
-    if (this.options.dest) {
-      var dest = path.resolve(utils.resolveDir(this.options.dest));
-      return (this.paths.dest = dest);
+/**
+ * Getter/setter for answer cwd
+ */
+
+Object.defineProperty(Questions.prototype, 'name', {
+  set: function(name) {
+    this.paths.name = name;
+  },
+  get: function() {
+    if (this.paths.name) {
+      return this.paths.name;
     }
+    var name = this.options.name || utils.project(this.cwd);
+    return (this.paths.name = name);
   }
 });
 
