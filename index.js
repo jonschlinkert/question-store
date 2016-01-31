@@ -30,7 +30,7 @@ function Questions(options) {
   }
 
   Options.apply(this, arguments);
-  this.initQuestions();
+  this.initQuestions(this.options);
   use(this);
 }
 
@@ -44,11 +44,11 @@ util.inherits(Questions, Options);
  * Intialize question-store
  */
 
-Questions.prototype.initQuestions = function() {
-  if (this.options.force === true) {
-    this.options.forceAll = true;
+Questions.prototype.initQuestions = function(opts) {
+  if (opts.force === true) {
+    opts.forceAll = true;
   }
-  this.inquirer = this.options.inquirer || utils.inquirer;
+  this.inquirer = opts.inquirer || utils.inquirer;
   this.enqueued = false;
   this.groupMap = {};
   this.groups = {};
@@ -367,7 +367,7 @@ Questions.prototype.addQuestion = function(name, val, options) {
  * Delete a question.
  *
  * ```js
- * question.deleteQuestion(name);
+ * question.delQuestion(name);
  * ```
  * @param {String} `name` The question to delete.
  * @api public
@@ -375,7 +375,7 @@ Questions.prototype.addQuestion = function(name, val, options) {
 
 Questions.prototype.delQuestion = function(name) {
   if (Array.isArray(name)) {
-    name.forEach(this.deleteQuestion.bind(this));
+    name.forEach(this.delQuestion.bind(this));
   } else if (this.cache.hasOwnProperty(name)) {
     var groupName = this.groupMap[name];
     if (groupName) {
@@ -385,7 +385,7 @@ Questions.prototype.delQuestion = function(name) {
     delete this.cache[name];
     this.unqueue(name);
   } else if (this.groups.hasOwnProperty(name)) {
-    this.groups[name].forEach(this.deleteQuestion.bind(this));
+    this.groups[name].forEach(this.delQuestion.bind(this));
   }
   return this;
 };
