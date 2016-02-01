@@ -51,8 +51,8 @@ describe('Questions', function() {
       assert.equal(typeof questions.del, 'function');
     });
 
-    it('should expose a "isAnswered" method', function() {
-      assert.equal(typeof questions.isAnswered, 'function');
+    it('should expose a "hasAnswer" method', function() {
+      assert.equal(typeof questions.hasAnswer, 'function');
     });
   });
 
@@ -215,36 +215,45 @@ describe('Questions', function() {
   describe('has', function() {
     beforeEach(function() {
       questions = new Questions({debug: true});
-      afterEach(function() {
-        questions.eraseAll();
-      });
+      questions.set('foo');
+      questions.set('bar');
+      questions.set('baz');
+      questions.set('qux');
+    });
+
+    afterEach(function(cb) {
+      questions.erase('foo');
+      questions.erase('bar');
+      questions.erase('baz');
+      questions.erase('qux');
+      cb();
     });
 
     it('should return true if an answer has been given for the cwd', function() {
-      questions.set('foo');
       var question = questions.get('foo');
-      question.setAnswer('bar');
-      assert(questions.isAnswered('foo'));
-      question.delAnswer();
+      question.answer.set('bar');
+
+      assert(questions.hasAnswer('foo'));
+      question.answer.del();
     });
 
     it('should return false if an answer has not been given for the cwd', function() {
-      questions.set('zzz');
-      assert(!questions.isAnswered('zzz'));
-      questions.setAnswer('zzz', 'yyy');
-      assert(questions.isAnswered('zzz'));
+      assert(!questions.hasAnswer('bar'));
+      questions.setAnswer('bar', 'yyy');
+      assert(questions.hasAnswer('bar'));
     });
 
     it('should return true if a value has been set for the default locale', function() {
-      questions.set('foo');
-      questions.get('foo')
-        .setDefault('bar');
-      assert(questions.isAnswered('foo'));
+      questions.set('baz');
+      questions.get('baz')
+        .answer.setDefault('bar');
+
+      assert(questions.hasAnswer('baz'));
     });
 
     it('should return false if a default value has not been set', function() {
-      questions.set('slsjkls');
-      assert(!questions.isAnswered('slsjkls'));
+      questions.set('qux');
+      assert(!questions.hasAnswer('qux'));
     });;
   });
 });
