@@ -184,7 +184,7 @@ Questions.prototype.addQuestion = function(name, val, options) {
   this.emit('set', question.name, question);
   this.cache[question.name] = question;
 
-  this.queue.push(question.name);
+  utils.union(this.queue, [question.name]);
   this.group(question.name);
   this.run(question);
   return question;
