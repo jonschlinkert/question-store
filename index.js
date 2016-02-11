@@ -90,6 +90,9 @@ Questions.prototype.initQuestions = function(opts) {
  */
 
 Questions.prototype.set = function(name, val, options) {
+  if (utils.isObject(name) && !utils.isQuestion(name)) {
+    return this.visit('set', name);
+  }
   this.addQuestion.apply(this, arguments);
   return this;
 };
