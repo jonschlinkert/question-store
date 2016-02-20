@@ -54,6 +54,15 @@
     "store"
   ],
   "verb": {
+    "run": true,
+    "toc": true,
+    "layout": "default",
+    "tasks": [
+      "readme"
+    ],
+    "plugins": [
+      "gulp-format-md"
+    ],
     "related": {
       "list": [
         "answer-store",
@@ -61,11 +70,12 @@
         "inquirer"
       ]
     },
-    "plugins": [
-      "gulp-format-md"
-    ],
     "reflinks": [
-      "question-cache"
-    ]
+      "question-cache",
+      "verb"
+    ],
+    "lint": {
+      "reflinks": true
+    }
   }
 }
