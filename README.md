@@ -2,14 +2,18 @@
 
 > Ask questions, persist the answers. Basic support for i18n and storing answers based on current working directory.
 
-Similar to [question-cache](https://github.com/jonschlinkert/question-cache), but persists answers to disk and supports locales and storing answers based on current working directory.
+## TOC
 
 - [Install](#install)
 - [Usage](#usage)
 - [API](#api)
   * [Questions](#questions)
   * [Question](#question)
+  * [Answers](#answers)
+  * [Defaults](#defaults)
+  * [Data](#data)
 - [Related projects](#related-projects)
+- [Generate docs](#generate-docs)
 - [Running tests](#running-tests)
 - [Contributing](#contributing)
 - [Author](#author)
@@ -25,6 +29,8 @@ Install with [npm](https://www.npmjs.com/):
 $ npm i question-store --save
 ```
 
+Similar to [question-cache](https://github.com/jonschlinkert/question-cache), but persists answers to disk and supports locales and storing answers based on current working directory.
+
 ## Usage
 
 ```js
@@ -33,9 +39,7 @@ var Questions = require('question-store');
 
 ## API
 
-### Questions
-
-### [Questions](index.js#L27)
+### [Questions](index.js#L30)
 
 Create an instance of `Questions` with the given `options`.
 
@@ -49,56 +53,7 @@ Create an instance of `Questions` with the given `options`.
 var Questions = new Questions(options);
 ```
 
-### [.setData](index.js#L75)
-
-Set data to be used for answering questions, or as default answers when `force` is true.
-
-**Params**
-
-* `key` **{String|Object}**: Property name to set, or object to merge onto `questions.data`
-* `val` **{any}**: The value to assign to `key`
-
-**Example**
-
-```js
-questions.setData('foo', 'bar');
-// or
-questions.setData({foo: 'bar'});
-```
-
-### [.hasData](index.js#L95)
-
-Return true if property `key` has a value on `questions.data`.
-
-**Params**
-
-* `key` **{String}**: The property to lookup.
-* `returns` **{Boolean}**
-
-**Example**
-
-```js
-questions.hasData('abc');
-```
-
-### [.getData](index.js#L112)
-
-Get the value of property `key` from `questions.data`.
-
-**Params**
-
-* `key` **{String}**: The property to get.
-* `returns` **{any}**: Returns the value of property `key`
-
-**Example**
-
-```js
-questions.setData('foo', 'bar');
-questions.getData('foo');
-//=> 'bar'
-```
-
-### [.set](index.js#L140)
+### [.set](index.js#L92)
 
 Cache a question to be asked at a later point. Creates an instance of [Question](#question), so any `Question` options or settings may be used.
 
@@ -124,7 +79,7 @@ questions.set({
 });
 ```
 
-### [.get](index.js#L158)
+### [.get](index.js#L113)
 
 Get question `name`, or group `name` if question is not found. You can also do a direct lookup using `quesions.cache['foo']`.
 
@@ -140,11 +95,15 @@ var name = questions.get('name');
 //=> question object
 ```
 
-### [.has](index.js#L174)
+### [.has](index.js#L129)
 
 Returns true if `questions.cache` or `questions.groups` has question `name`.
 
-* `returns` **{String}**: The name of the question to check
+* `returns`
+
+**{String}**
+
+: The name of the question to check
 
 **Example**
 
@@ -153,11 +112,15 @@ var name = questions.has('name');
 //=> true
 ```
 
-### [.del](index.js#L190)
+### [.del](index.js#L145)
 
 Delete the given question or group.
 
-* `returns` **{String}**: The name of the question to delete
+* `returns`
+
+**{String}**
+
+: The name of the question to delete
 
 **Example**
 
@@ -167,7 +130,319 @@ questions.get('name');
 //=> undefined
 ```
 
-### [.setAnswer](index.js#L220)
+### [.clear](index.js#L162)
+
+Delete the given question or group.
+
+* `returns`
+
+**{String}**
+
+: The name of the question to delete
+
+**Example**
+
+```js
+questions.del('name');
+questions.get('name');
+//=> undefined
+```
+
+### [.delQuestion](index.js#L206)
+
+Delete a question.
+
+**Params**
+
+* `name` **{String}**: The question to delete.
+
+**Example**
+
+```js
+question.delQuestion(name);
+```
+
+### [.getGroup](index.js#L274)
+
+Get a group with the given `key`. If `key` has a dot, only the substring before the dot is used for the lookup.
+
+**Params**
+
+* `key` **{String}**
+* `returns` **{Object}**
+
+**Example**
+
+```js
+questions
+  .set('author.name', 'Author name?')
+  .set('author.url', 'Author url?')
+  .set('project.name', 'Project name?')
+  .set('project.url', 'Project url?')
+
+var group = questions.getGroup('author');
+//=> ['author.name', 'author.url']
+
+questions.ask(group, function(err, answers) {
+  // do stuff with answers
+});
+```
+
+### [.deleteAll](index.js#L288)
+
+Delete answers for all questions for the current (or given) locale.
+
+**Params**
+
+* `locale` **{String}**: Optionally pass a locale
+
+**Example**
+
+```js
+question.deleteAll(locale);
+```
+
+### [.erase](index.js#L306)
+
+Erase all answers for question `name` from the file system.
+
+**Params**
+
+* `name` **{String}**: Question name
+
+**Example**
+
+```js
+question.erase(name);
+```
+
+### [.ask](index.js#L352)
+
+Ask one or more questions, with the given `options` and callback.
+
+**Params**
+
+* `queue` **{String|Array}**: Name or array of question names.
+* `options` **{Object|Function}**: Question options or callback function
+* `callback` **{Function}**: callback function
+
+**Example**
+
+```js
+questions.ask(['name', 'description'], function(err, answers) {
+  console.log(answers);
+});
+```
+
+### [.getIndex](index.js#L471)
+
+Get a the index of question `name` from the queue.
+
+**Params**
+
+* `name` **{String}**
+* `returns` **{Object}**
+
+**Example**
+
+```js
+questions.getIndex('author');
+//=> 1
+```
+
+### [.unqueue](index.js#L528)
+
+Remove a question from the queue.
+
+**Params**
+
+* `items` **{Object}**: Object of views
+
+**Example**
+
+```js
+console.log(questions.queue);
+//=> ['a', 'b', 'c'];
+questions.unqueue('a');
+```
+
+### [Question](lib/question.js#L25)
+
+Create new `Question` store `name`, with the given `options`.
+
+**Params**
+
+* `name` **{String}**: The question property name.
+* `options` **{Object}**: Store options
+
+**Example**
+
+```js
+var question = new Question(name, options);
+```
+
+### [.set](lib/question.js#L84)
+
+Return true if the question has been answered for the current locale and the current working directory.
+
+**Params**
+
+* `locale` **{String}**: Optionally pass a locale
+
+**Example**
+
+```js
+question.set('foo', 'bar');
+```
+
+### [.get](lib/question.js#L101)
+
+Get `key` from the question.
+
+**Params**
+
+* `key` **{String}**
+
+**Example**
+
+```js
+question.set('foo', 'bar');
+question.get('foo');
+//=> 'bar'
+```
+
+### [.setAnswer](lib/question.js#L115)
+
+Return the answer for the current locale and current working directory.
+
+**Params**
+
+* `locale` **{String}**: Optionally pass a locale
+
+**Example**
+
+```js
+question.getAnswer(locale);
+```
+
+### [.getAnswer](lib/question.js#L129)
+
+Return the answer for the current locale and current working directory.
+
+**Params**
+
+* `locale` **{String}**: Optionally pass a locale
+
+**Example**
+
+```js
+question.getAnswer(locale);
+```
+
+### [.hasAnswer](lib/question.js#L144)
+
+Return true if the question has been answered for the current locale and the current working directory.
+
+**Params**
+
+* `locale` **{String}**: Optionally pass a locale
+
+**Example**
+
+```js
+question.hasAnswer(locale);
+```
+
+### [.setDefault](lib/question.js#L159)
+
+Return the answer for the current locale and current working directory.
+
+**Params**
+
+* `locale` **{String}**: Optionally pass a locale
+
+**Example**
+
+```js
+question.setDefault('Jon', 'en');
+question.setDefault('Jean', 'fr');
+```
+
+### [.erase](lib/question.js#L175)
+
+Erase the answer for a question.
+
+* `returns`
+
+**{Boolean}**
+
+**Example**
+
+```js
+question.erase();
+question.hasAnswer();
+//=> false
+```
+
+### [.force](lib/question.js#L192)
+
+Force the question to be asked.
+
+* `returns`
+
+**{Boolean}**
+
+**Example**
+
+```js
+question.options.force = true;
+question.isForced();
+//=> true
+```
+
+### [.isForced](lib/question.js#L210)
+
+Return true if the question will be forced (asked even if it already has an answer).
+
+* `returns`
+
+**{Boolean}**
+
+**Example**
+
+```js
+question.options.force = true;
+question.isForced();
+//=> true
+```
+
+### [.ask](lib/question.js#L231)
+
+Ask the question.
+
+* If an answer has already been stored for the current locale and cwd it will be returned directly without asking the question.
+* If `options.force` is
+
+**true**
+
+, the answer will be asked asked even if the answer is already stored.
+
+* If `options.save` is **false**, the answer will not be persisted to the file system, and the question will be re-asked each time `.ask()` is called (which means it's also not necessary to define `force` when `save` is false).
+
+**Params**
+
+* `options` **{Object|Function}**: Question options or callback function
+* `callback` **{Function}**: callback function
+
+**Example**
+
+```js
+question.ask({force: true}, function(err, answer) {
+  console.log(answer);
+});
+```
+
+### [.setAnswer](lib/answers.js#L32)
 
 Set the answer for question `name` at the current cwd.
 
@@ -196,7 +471,7 @@ questions.getAnswer('name', 'fr');
 //=> {name: 'Jean'}
 ```
 
-### [.getAnswer](index.js#L247)
+### [.getAnswer](lib/answers.js#L60)
 
 Get the answer for question `name` at the current cwd.
 
@@ -220,40 +495,12 @@ var name = questions.getAnswer('name', 'fr');
 //=> {name: 'Jean'}
 ```
 
-### [.delAnswer](index.js#L265)
+### [.hasAnswer](lib/answers.js#L88)
 
-Delete the answer for question `name` for the current (or given) locale.
+Get the answer for question `name` at the current cwd.
 
-**Params**
-
-* `name` **{String}**: Question name
-* `locale` **{String}**: Optionally pass a locale
-
-**Example**
-
-```js
-question.delAnswer(locale);
-```
-
-### [.setDefault](index.js#L295)
-
-Add a question that will have its answer stored as a default value.
-
-**Params**
-
-* `name` **{String}**
-* `val` **{Object}**
-* `options` **{Object}**
-
-**Example**
-
-```js
-questions.setDefault('author.name', 'What is your name?');
-```
-
-### [.getDefault](index.js#L320)
-
-Get the default answer object for question `name` for the current locale. Optionally specify a locale to get the default answer for that locale.
+Optionally specify a locale to get, otherwise the default locale's
+answer is returend.
 
 **Params**
 
@@ -264,326 +511,161 @@ Get the default answer object for question `name` for the current locale. Option
 **Example**
 
 ```js
-var name = questions.getDefault('name');
+var name = questions.getAnswer('name');
 //=> {name: 'Jon'}
+
+// specify a locale
+var name = questions.hasAnswer('name', 'fr');
+//=> true
+```
+
+### [.setDefault](lib/defaults.js#L32)
+
+Set the answer for question `name` at the current cwd.
+
+Optionally specify a locale to set, otherwise the answer is set
+for the default locale.
+
+**Params**
+
+* `name` **{String}**
+* `locale` **{String}**
+* `returns` **{Object}**: Returns the answer object.
+
+**Example**
+
+```js
+questions.setDefault('name', 'Jack');
+questions.getDefault('name');
+//=> {name: 'Jack'}
+
+// specify a locale
+questions.setDefault('name', 'fr');
+
+questions.getDefault('name');
+//=> {name: 'Jack'}
+questions.getDefault('name', 'fr');
+//=> {name: 'Jean'}
+```
+
+### [.getDefault](lib/defaults.js#L64)
+
+Get the answer for question `name` at the current cwd.
+
+Optionally specify a locale to get, otherwise the default locale's
+answer is returend.
+
+**Params**
+
+* `name` **{String}**
+* `locale` **{String}**
+* `returns` **{Object}**: Returns the question object.
+
+**Example**
+
+```js
+var name = questions.setDefault('name', 'Brian');
+var name = questions.setDefault('name', 'Jean', 'fr');
+
+var name = questions.getDefault('name');
+//=> {name: 'Brian'}
 
 // specify a locale
 var name = questions.getDefault('name', 'fr');
 //=> {name: 'Jean'}
 ```
 
-### [.isAnswered](index.js#L339)
+### [.hasDefault](lib/defaults.js#L91)
 
-Return true if question `name` has been answered for the current locale and the current working directory.
+Get the answer for question `name` at the current cwd.
 
-**Params**
-
-* `name` **{String}**: Question name
-* `locale` **{String}**: Optionally pass a locale
-
-**Example**
-
-```js
-question.isAnswered(locale);
-```
-
-### [.delQuestion](index.js#L376)
-
-Delete a question.
-
-**Params**
-
-* `name` **{String}**: The question to delete.
-
-**Example**
-
-```js
-question.deleteQuestion(name);
-```
-
-### [.getGroup](index.js#L444)
-
-Get a group with the given `key`. If `key` has a dot, only the substring before the dot is used for the lookup.
-
-**Params**
-
-* `key` **{String}**
-* `returns` **{Object}**
-
-**Example**
-
-```js
-questions
-  .set('author.name', 'Author name?')
-  .set('author.url', 'Author url?')
-  .set('project.name', 'Project name?')
-  .set('project.url', 'Project url?')
-
-var group = questions.getGroup('author');
-//=> ['author.name', 'author.url']
-
-questions.ask(group, function(err, answers) {
-  // do stuff with answers
-});
-```
-
-### [.deleteAll](index.js#L458)
-
-Delete answers for all questions for the current (or given) locale.
-
-**Params**
-
-* `locale` **{String}**: Optionally pass a locale
-
-**Example**
-
-```js
-question.deleteAll(locale);
-```
-
-### [.erase](index.js#L476)
-
-Erase all answers for question `name` from the file system.
-
-**Params**
-
-* `name` **{String}**: Question name
-
-**Example**
-
-```js
-question.erase(name);
-```
-
-### [.ask](index.js#L521)
-
-Ask one or more questions, with the given `options` and callback.
-
-**Params**
-
-* `queue` **{String|Array}**: Name or array of question names.
-* `options` **{Object|Function}**: Question options or callback function
-* `callback` **{Function}**: callback function
-
-**Example**
-
-```js
-questions.ask(['name', 'description'], function(err, answers) {
-  console.log(answers);
-});
-```
-
-### [.getIndex](index.js#L631)
-
-Get a the index of question `name` from the queue.
+Optionally specify a locale to get, otherwise the default locale's
+answer is returend.
 
 **Params**
 
 * `name` **{String}**
-* `returns` **{Object}**
+* `locale` **{String}**
+* `returns` **{Object}**: Returns the question object.
 
 **Example**
 
 ```js
-questions.getIndex('author');
-//=> 1
+var name = questions.setDefault('name', 'Brian', 'fr');
+var name = questions.hasDefault('name', 'fr');
+//=> true
+var name = questions.hasDefault('name', 'en');
+//=> false
 ```
 
-### [.unqueue](index.js#L688)
+### [.setData](lib/data.js#L24)
 
-Remove a question from the queue.
+Set data to be used for answering questions, or as default answers when `force` is true.
 
 **Params**
 
-* `items` **{Object}**: Object of views
+* `key` **{String|Object}**: Property name to set, or object to merge onto `questions.data`
+* `val` **{any}**: The value to assign to `key`
 
 **Example**
 
 ```js
-console.log(questions.queue);
-//=> ['a', 'b', 'c'];
-questions.unqueue('a');
+questions.setData('foo', 'bar');
+// or
+questions.setData({foo: 'bar'});
 ```
 
-### Question
+### [.hasData](lib/data.js#L45)
 
-### [Question](lib/question.js#L25)
-
-Create new `Question` store `name`, with the given `options`.
+Return true if property `key` has a value on `questions.data`.
 
 **Params**
 
-* `name` **{String}**: The question property name.
-* `options` **{Object}**: Store options
-
-**Example**
-
-```js
-var question = new Question(name, options);
-```
-
-### [.setAnswer](lib/question.js#L80)
-
-Set the answer to the question for the current (or given) locale, at the current working directory.
-
-**Params**
-
-* `locale` **{String}**: Optionally pass a locale
-
-**Example**
-
-```js
-question.setAnswer('foo');
-```
-
-### [.getAnswer](lib/question.js#L96)
-
-Get the answer for the current (or given) locale for the current working directory.
-
-**Params**
-
-* `locale` **{String}**: Optionally pass a locale
-
-**Example**
-
-```js
-question.getAnswer(locale);
-```
-
-### [.delAnswer](lib/question.js#L111)
-
-Delete the answer for the current (or given) locale and the current working directory.
-
-**Params**
-
-* `locale` **{String}**: Optionally pass a locale
-
-**Example**
-
-```js
-question.delAnswer(locale);
-```
-
-### [.setDefault](lib/question.js#L127)
-
-Set the default answer to use for the current (or given) locale, at the current working directory.
-
-**Params**
-
-* `locale` **{String}**: Optionally pass a locale
-
-**Example**
-
-```js
-question.setDefault('foo');
-```
-
-### [.getDefault](lib/question.js#L142)
-
-Get the default answer for the current (or given) locale
-
-**Params**
-
-* `locale` **{String}**: Optionally pass a locale
-
-**Example**
-
-```js
-question.getDefault();
-```
-
-### [.hasDefault](lib/question.js#L158)
-
-Return true if the question has been given a default answer for the current (or given) locale, at the current working directory.
-
-**Params**
-
-* `locale` **{String}**: Optionally pass a locale
-
-**Example**
-
-```js
-question.hasDefault('es');
-```
-
-### [.eraseAnswer](lib/question.js#L171)
-
-Delete the answer store (all answers for the question) from the file system.
-
-**Example**
-
-```js
-question.eraseAnswer();
-```
-
-### [.isAnswered](lib/question.js#L187)
-
-Return true if the question has been answered for the current locale and the current working directory.
-
-**Params**
-
-* `locale` **{String}**: Optionally pass a locale
-
-**Example**
-
-```js
-question.isAnswered(locale);
-```
-
-### [.force](lib/question.js#L203)
-
-Force the question to be asked.
-
+* `key` **{String}**: The property to lookup.
 * `returns` **{Boolean}**
 
 **Example**
 
 ```js
-question.options.force = true;
-question.isForced();
-//=> true
+questions.hasData('abc');
 ```
 
-### [.isForced](lib/question.js#L221)
+### [.getData](lib/data.js#L63)
 
-Return true if the question will be forced (asked even if it already has an answer).
-
-* `returns` **{Boolean}**
-
-**Example**
-
-```js
-question.options.force = true;
-question.isForced();
-//=> true
-```
-
-### [.ask](lib/question.js#L242)
-
-Ask the question.
-
-* If an answer has already been stored for the current locale and cwd it will be returned directly without asking the question.
-* If `options.force` is **true**, the answer will be asked asked even if the answer is already stored.
-* If `options.save` is **false**, the answer will not be persisted to the file system, and the question will be re-asked each time `.ask()` is called (which means it's also not necessary to define `force` when `save` is false).
+Get the value of property `key` from `questions.data`.
 
 **Params**
 
-* `options` **{Object|Function}**: Question options or callback function
-* `callback` **{Function}**: callback function
+* `key` **{String}**: The property to get.
+* `returns` **{any}**: Returns the value of property `key`
 
 **Example**
 
 ```js
-question.ask({force: true}, function(err, answer) {
-  console.log(answer);
-});
+questions.setData('foo', 'bar');
+questions.getData('foo');
+//=> 'bar'
 ```
 
 ## Related projects
 
 * [answer-store](https://www.npmjs.com/package/answer-store): Store answers to user prompts, based on locale and/or current working directory. | [homepage](https://github.com/jonschlinkert/answer-store)
-* [inquirer](https://www.npmjs.com/package/inquirer): A collection of common interactive command line user interfaces. | [homepage](https://github.com/sboudrias/Inquirer.js#readme)
+* [inquirer](https://www.npmjs.com/package/inquirer): A collection of common interactive command line user interfaces. | [homepage](https://github.com/sboudrias/Inquirer.js)
 * [question-cache](https://www.npmjs.com/package/question-cache): A wrapper around inquirer that makes it easy to create and selectively reuse questions. | [homepage](https://github.com/jonschlinkert/question-cache)
+
+## Generate docs
+
+Generate readme and API documentation with [verb](https://github.com/verbose/verb):
+
+```sh
+$ npm i -d && npm run docs
+```
+
+Or, if [verb](https://github.com/verbose/verb) is installed globally:
+
+```sh
+$ verb
+```
 
 ## Running tests
 
@@ -607,8 +689,8 @@ Pull requests and stars are always welcome. For bugs and feature requests, [plea
 ## License
 
 Copyright © 2016 [Jon Schlinkert](https://github.com/jonschlinkert)
-Released under the MIT license.
+Released under the [MIT license](https://github.com/jonschlinkert/question-store/blob/master/LICENSE).
 
 ***
 
-_This file was generated by [verb](https://github.com/verbose/verb) on January 28, 2016._
+_This file was generated by [verb](https://github.com/verbose/verb), v0.9.0, on February 20, 2016._
