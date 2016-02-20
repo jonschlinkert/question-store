@@ -353,7 +353,6 @@ Questions.prototype.ask = function(names, options, cb) {
   if (typeof names === 'function') {
     return this.ask(null, null, names);
   }
-
   if (typeof options === 'function') {
     return this.ask(names, {}, options);
   }
@@ -371,25 +370,35 @@ Questions.prototype.ask = function(names, options, cb) {
   names = names || this.queue;
   var questions = this.buildQueue(names, opts.locale);
   var self = this;
+  var answers = {};
 
-  setImmediate(function() {
-    utils.async.reduce(questions, {}, function(answers, question, next) {
-      var key = question.name;
-      self.emit('ask', key, question, answers);
+  utils.async.eachSeries(questions, function(question, next) {
+    var key = question.name;
+    self.emit('ask', key, question, answers);
 
-      question.ask(opts, function(err, answer) {
-        if (err) return next(err);
+    if (question.skip === true) {
+      return next(null, answers);
+    }
 
-        var res = utils.get(answer, key);
-        self.emit('answer', key, res, question);
-        utils.set(answers, key, res);
+    question.ask(opts, function(err, answer) {
+      if (err) return next(err);
+      var val = utils.get(answer, self.name);
 
-        setImmediate(function() {
-          next(null, answers);
-        });
-      });
-    }, cb);
-  });
+      // if val is undefined, emit it and move on
+      if (typeof val === 'undefined') {
+        self.emit('answer', key, question, answers);
+        return next(null, answers);
+      }
+
+      // otherwise set the value on `question.answer.data`
+      question.setAnswer(val, self.locale);
+      self.emit('answer', key, question, answers);
+
+      // add the answer to the answers object
+      utils.set(answers, key, val);
+      next(null, answers);
+    });
+  }, cb);
 };
 
 /**
