@@ -373,11 +373,16 @@ Questions.prototype.ask = function(names, options, cb) {
   var answers = {};
 
   utils.async.eachSeries(questions, function(question, next) {
-    var key = question.name;
-    self.emit('ask', key, question, answers);
-
     if (question.skip === true) {
       return next(null, answers);
+    }
+
+    var key = question.name;
+    self.emit('ask', key, question, answers);
+    if (question.hasAnswer() && !opts.force) {
+      utils.set(answers, key, question.getAnswer());
+      cb(null, answers);
+      return;
     }
 
     question.ask(opts, function(err, answer) {
