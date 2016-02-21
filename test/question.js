@@ -73,18 +73,18 @@ describe('Question', function() {
 
     it('should set a value on [locale][cwd]', function() {
       question.answer.set('foo');
-      assert(question.answer.data.projects.en[question.project]);
+      assert(question.answer.data.locales.en[question.name]);
     });
 
     it('should set a value on the default locale, "en"', function() {
       question.answer.set('foo');
-      assert(question.answer.data.projects.en[question.project]);
+      assert(question.answer.data.locales.en[question.name]);
     });
 
     it('should set a value on the specified locale', function() {
       question.answer.set('bar', 'es');
-      assert(question.answer.data.projects.es[question.project]);
-      assert.equal(question.answer.data.projects.es[question.project], 'bar');
+      assert(question.answer.data.locales.es[question.name]);
+      assert.equal(question.answer.data.locales.es[question.name], 'bar');
     });
   });
 
@@ -104,6 +104,26 @@ describe('Question', function() {
       question.answer.set('b', 'en');
       assert(question.answer.get() === 'b');
       assert(question.answer.get('es') === 'a');
+    });
+  });
+
+  describe('prompt', function() {
+    it('should prompt for a value', function(cb) {
+      question.set('name', 'whatever');
+      question.set('message', 'Want to answer?');
+      var count = 0;
+
+      question.options.prompt = function(questionObject, next) {
+        count++;
+        next({whatever: 'foo'});
+      };
+
+      question.ask(function(err, answer) {
+        assert(!err);
+        assert.equal(count, 1);
+        assert.equal(answer.whatever, 'foo');
+        cb();
+      });
     });
   });
 
@@ -235,21 +255,27 @@ describe('Question', function() {
     });
 
     it('should ask nested questions', function(cb) {
+      var called = 0;
       question = new Question('author.name', {
         message: 'What is your name?',
+        save: false,
         inquirer: {
           prompt: function(question, next) {
+            called++;
             assert(question);
             assert.equal(question.type, 'input');
             assert.equal(question.name, 'author.name');
             assert.equal(question.message, 'What is your name?');
-            next('Foo');
+            next({author: {name: 'Foo'}});
           }
         }
       });
 
       question.ask(function(err, answers) {
+        if (err) return cb(err);
+
         assert(answers.author.name === 'Foo');
+        assert.equal(called, 1);
         cb();
       });
     });

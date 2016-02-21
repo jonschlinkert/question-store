@@ -10,12 +10,19 @@
 var use = require('use');
 var util = require('util');
 var path = require('path');
+var Store = require('data-store');
 var Options = require('option-cache');
 var Question = require('./lib/question');
 var defaults = require('./lib/defaults');
 var answers = require('./lib/answers');
 var utils = require('./lib/utils');
 var data = require('./lib/data');
+
+/**
+ * Cache answers for a session
+ */
+
+var answerCache = {};
 
 /**
  * Create an instance of `Questions` with the given `options`.
@@ -31,7 +38,6 @@ function Questions(options) {
   if (!(this instanceof Questions)) {
     return new Questions(options);
   }
-
   Options.apply(this, arguments);
   use(this);
   this.initQuestions(this.options);
@@ -51,6 +57,7 @@ Questions.prototype.initQuestions = function(opts) {
   if (opts.force === true) {
     opts.forceAll = true;
   }
+
   this.inquirer = opts.inquirer || utils.inquirer;
   this.enqueued = false;
   this.groupMap = {};
@@ -58,7 +65,9 @@ Questions.prototype.initQuestions = function(opts) {
   this.cache = {};
   this.paths = {};
   this.queue = [];
-  this.data = {};
+
+  this.store = opts.store || new Store(opts.project || this.name);
+  this.data = opts.data || {};
 
   this.use(defaults());
   this.use(answers());
@@ -180,6 +189,7 @@ Questions.prototype.force = function() {
 
 Questions.prototype.addQuestion = function(name, val, options) {
   var opts = utils.merge({}, this.options, options);
+  opts.project = opts.project || this.project;
   opts.path = this.path;
   opts.cwd = this.cwd;
 
@@ -370,40 +380,92 @@ Questions.prototype.ask = function(names, options, cb) {
   names = names || this.queue;
   var questions = this.buildQueue(names, opts.locale);
   var self = this;
-  var answers = {};
 
   utils.async.eachSeries(questions, function(question, next) {
-    if (question.skip === true) {
-      return next(null, answers);
+    var answer = {};
+    var key = question.name;
+    answerCache = utils.omitEmpty(answerCache);
+
+    var questOpts = utils.merge({}, question.options, opts);
+    console.log(questOpts)
+
+    var val = question.getAnswer(self.locale) || questOpts.default;
+    var isCached = answerCache.hasOwnProperty(key);
+    var isAnswered = false;
+
+    if (typeof val !== 'undefined') {
+      isAnswered = true;
+
+      if (!isCached) {
+        utils.set(answerCache, key, val);
+      }
+    } else if (isCached) {
+      val = utils.get(answerCache, key);
+
+      if (questOpts.save !== false) {
+        question.setAnswer(val, self.locale);
+      }
     }
 
-    var key = question.name;
-    self.emit('ask', key, question, answers);
-    if (question.hasAnswer() && !opts.force) {
-      utils.set(answers, key, question.getAnswer());
-      cb(null, answers);
+    if (typeof val === 'undefined') {
+      val = question.getAnswer(self.locale);
+
+      if (typeof val === 'undefined') {
+        val = self.store.get(key);
+      }
+    }
+
+    if (typeof val !== 'undefined') {
+      isAnswered = true;
+      utils.set(answerCache, key, val);
+      utils.set(answer, key, val);
+
+    } else {
+      isAnswered = false;
+      if (question.skip !== true) {
+        question.force();
+      }
+    }
+
+    answerCache = utils.omitEmpty(answerCache);
+    self.emit('ask', key, question, answer, answerCache);
+
+    if ((question.skip === true || !questOpts.force) && isAnswered) {
+      if (questOpts.save !== false) {
+        question.setAnswer(val);
+        self.store.set(answerCache);
+      }
+      next(null, answerCache);
       return;
     }
 
-    question.ask(opts, function(err, answer) {
+    question.ask(questOpts, function(err, answer) {
       if (err) return next(err);
-      var val = utils.get(answer, self.name);
 
-      // if val is undefined, emit it and move on
+      var val = utils.get(answer, key);
+
       if (typeof val === 'undefined') {
-        self.emit('answer', key, question, answers);
-        return next(null, answers);
+        self.emit('answer', key, question, val, answerCache);
+        next(null, answerCache);
+        return;
       }
 
-      // otherwise set the value on `question.answer.data`
-      question.setAnswer(val, self.locale);
-      self.emit('answer', key, question, answers);
+      utils.set(answerCache, key, val);
+      answerCache = utils.omitEmpty(answerCache);
+      self.emit('answer', key, question, val, answerCache);
 
-      // add the answer to the answers object
-      utils.set(answers, key, val);
-      next(null, answers);
+      if (questOpts.save !== false) {
+        question.setAnswer(val, self.locale);
+        self.store.set(answerCache);
+      }
+
+      next(null, answerCache);
     });
-  }, cb);
+
+  }, function(err) {
+    if (err) return cb(err);
+    cb(null, answerCache);
+  });
 };
 
 /**
@@ -426,6 +488,8 @@ Questions.prototype.buildQueue = function(keys, locale) {
 
     if (typeof val === 'string') {
       val = this.get(val);
+
+      // if `val` is a question group, re-build it
       if (Array.isArray(val)) {
         return this.buildQueue(val, locale);
       }
@@ -616,7 +680,7 @@ Object.defineProperty(Questions.prototype, 'name', {
     if (this.paths.name) {
       return this.paths.name;
     }
-    var name = this.options.name || utils.project(this.cwd);
+    var name = this.options.name || this.options.project || utils.project(this.cwd);
     return (this.paths.name = name);
   }
 });
