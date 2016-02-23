@@ -39,7 +39,7 @@ var Questions = require('question-store');
 
 ## API
 
-### [Questions](index.js#L38)
+### [Questions](index.js#L39)
 
 Create an instance of `Questions` with the given `options`.
 
@@ -186,7 +186,7 @@ Clear cached answer data. Note that this will not clear answers that are persist
 questions.clearCache();
 ```
 
-### [.deleteAll](index.js#L326)
+### [.deleteAll](index.js#L327)
 
 Delete answers for all questions for the current (or given) locale.
 
@@ -200,7 +200,7 @@ Delete answers for all questions for the current (or given) locale.
 question.deleteAll(locale);
 ```
 
-### [.erase](index.js#L344)
+### [.erase](index.js#L345)
 
 Erase all answers for question `name` from the file system.
 
@@ -214,7 +214,7 @@ Erase all answers for question `name` from the file system.
 question.erase(name);
 ```
 
-### [.ask](index.js#L390)
+### [.ask](index.js#L391)
 
 Ask one or more questions, with the given `options` and callback.
 
