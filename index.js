@@ -10,6 +10,7 @@
 var use = require('use');
 var util = require('util');
 var path = require('path');
+var debug = require('debug')('question-store');
 var Store = require('data-store');
 var Options = require('option-cache');
 var Question = require('./lib/question');
@@ -38,7 +39,11 @@ function Questions(options) {
   if (!(this instanceof Questions)) {
     return new Questions(options);
   }
-  Options.apply(this, arguments);
+
+  this.options = this.options || {};
+  Options.call(this);
+  this.option(options || {});
+
   use(this);
   this.initQuestions(this.options);
 }
@@ -58,6 +63,7 @@ Questions.prototype.initQuestions = function(opts) {
     opts.forceAll = true;
   }
 
+  this.answerCache = answerCache;
   this.inquirer = opts.inquirer || utils.inquirer;
   this.enqueued = false;
   this.groupMap = {};
@@ -65,9 +71,15 @@ Questions.prototype.initQuestions = function(opts) {
   this.cache = {};
   this.paths = {};
   this.queue = [];
-
-  this.store = opts.store || new Store(opts.project || this.name);
   this.data = opts.data || {};
+
+  utils.sync(this, 'answerStore', function() {
+    return opts.store || new Store(opts.project || this.name);
+  });
+
+  utils.sync(this, 'defaultStore', function() {
+    return new Store('defaults');
+  });
 
   this.use(defaults());
   this.use(answers());
@@ -286,6 +298,22 @@ Questions.prototype.getGroup = function(key) {
 };
 
 /**
+ * Clear cached answer data. Note that this will not clear answers
+ * that are persisted to the file system, or answers stored on a
+ * question. It only clears cached answers on `questions`.
+ *
+ * ```js
+ * questions.clearCache();
+ * ```
+ * @api public
+ */
+
+Questions.prototype.clearCache = function() {
+  answerCache = {};
+  this.data = {};
+};
+
+/**
  * Delete answers for all questions for the current (or given) locale.
  *
  * ```js
@@ -382,84 +410,42 @@ Questions.prototype.ask = function(names, options, cb) {
   var self = this;
 
   utils.async.eachSeries(questions, function(question, next) {
-    var answer = {};
+    self.setData(answerCache);
     var key = question.name;
-    answerCache = utils.omitEmpty(answerCache);
 
-    var questOpts = utils.merge({}, question.options, opts);
-    console.log(questOpts)
+    debug('asking "%s":', key);
 
-    var val = question.getAnswer(self.locale) || questOpts.default;
-    var isCached = answerCache.hasOwnProperty(key);
-    var isAnswered = false;
+    var questOpts = utils.merge({}, opts, question.options);
+    var answer = getAnswer(self, question);
+    question.options.default = answer;
 
-    if (typeof val !== 'undefined') {
-      isAnswered = true;
-
-      if (!isCached) {
-        utils.set(answerCache, key, val);
-      }
-    } else if (isCached) {
-      val = utils.get(answerCache, key);
-
-      if (questOpts.save !== false) {
-        question.setAnswer(val, self.locale);
-      }
+    if (questOpts.save === false) {
+      answer = null;
     }
 
-    if (typeof val === 'undefined') {
-      val = question.getAnswer(self.locale);
-
-      if (typeof val === 'undefined') {
-        val = self.store.get(key);
-      }
-    }
-
-    if (typeof val !== 'undefined') {
-      isAnswered = true;
-      utils.set(answerCache, key, val);
-      utils.set(answer, key, val);
-
-    } else {
-      isAnswered = false;
-      if (question.skip !== true) {
-        question.force();
-      }
-    }
-
-    answerCache = utils.omitEmpty(answerCache);
-    self.emit('ask', key, question, answer, answerCache);
+    var isAnswered = utils.isAnswer(answer);
 
     if ((question.skip === true || !questOpts.force) && isAnswered) {
-      if (questOpts.save !== false) {
-        question.setAnswer(val);
-        self.store.set(answerCache);
-      }
-      next(null, answerCache);
+      debug('skipping question "%s"', key, answer);
+
+      updateAnswers(self, question, answer, questOpts);
+      self.emit('ask', key, question, answer, answerCache);
+      question.next(answer, self, next);
       return;
     }
+
+    self.emit('ask', key, question, answer, answerCache);
 
     question.ask(questOpts, function(err, answer) {
       if (err) return next(err);
 
+      debug('answered question "%s"', key, answer);
+
       var val = utils.get(answer, key);
+      updateAnswers(self, question, val, questOpts);
 
-      if (typeof val === 'undefined') {
-        self.emit('answer', key, question, val, answerCache);
-        next(null, answerCache);
-        return;
-      }
-
-      utils.set(answerCache, key, val);
-      answerCache = utils.omitEmpty(answerCache);
       self.emit('answer', key, question, val, answerCache);
-
-      if (questOpts.save !== false) {
-        question.setAnswer(val, self.locale);
-        self.store.set(answerCache);
-      }
-
-      next(null, answerCache);
+      question.next(val, self, next);
     });
 
   }, function(err) {
@@ -467,6 +453,40 @@ Questions.prototype.ask = function(names, options, cb) {
     cb(null, answerCache);
   });
 };
+
+function getAnswer(app, question) {
+  var answer = question.getAnswer();
+  var key = question.name;
+  if (!utils.isAnswer(answer)) {
+    answer = question.options.default;
+  }
+  if (!utils.isAnswer(answer)) {
+    answer = app.getData(key);
+  }
+  if (!utils.isAnswer(answer)) {
+    answer = utils.get(app.answerCache, key);
+  }
+  if (!utils.isAnswer(answer)) {
+    answer = app.answerStore.get(key);
+  }
+  if (!utils.isAnswer(answer)) {
+    answer = app.defaultStore.get(key);
+  }
+  return answer;
+}
+
+function updateAnswers(app, question, answer, opts) {
+  if (utils.isAnswer(answer)) {
+    utils.set(app.answerCache, question.name, answer);
+    app.setData(app.answerCache);
+    app.defaultStore.set(app.answerCache);
+
+    if (opts.save !== false) {
+      app.answerStore.set(app.answerCache);
+      question.answer.set(answer);
+    }
+  }
+}
 
 /**
  * Build the object of questions to ask.
@@ -640,7 +660,8 @@ Questions.prototype.define = function(key, val) {
  */
 
 Questions.prototype.visit = function(method, val) {
-  return utils.visit(this, method, val);
+  utils.visit(this, method, val);
+  return this;
 };
 
 /**

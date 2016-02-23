@@ -4,10 +4,11 @@ var Questions = require('..');
 var questions = new Questions();
 
 questions
+  .option('force', true)
   .setDefault('author.name', 'Author name?')
   .setDefault('author.url', 'Author URL?')
   .setDefault('author.username', 'Author username?')
-  .set('other', 'Other info?')
+  .setData('other', 'Other info?')
 
 questions
   .ask('author', function (err, answer) {

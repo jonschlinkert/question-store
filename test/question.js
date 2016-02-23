@@ -266,15 +266,15 @@ describe('Question', function() {
             assert.equal(question.type, 'input');
             assert.equal(question.name, 'author.name');
             assert.equal(question.message, 'What is your name?');
-            next({author: {name: 'Foo'}});
+            next({author: {name: 'BarBaz'}});
           }
         }
       });
 
-      question.ask(function(err, answers) {
+      question.ask({ save: false }, function(err, answers) {
         if (err) return cb(err);
 
-        assert(answers.author.name === 'Foo');
+        assert(answers.author.name === 'BarBaz');
         assert.equal(called, 1);
         cb();
       });
