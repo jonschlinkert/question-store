@@ -18,6 +18,7 @@ var defaults = require('./lib/defaults');
 var answers = require('./lib/answers');
 var utils = require('./lib/utils');
 var data = require('./lib/data');
+var defaultStore = new Store('defaults');
 
 /**
  * Cache answers for a session
@@ -73,13 +74,12 @@ Questions.prototype.initQuestions = function(opts) {
   this.queue = [];
   this.data = opts.data || {};
 
-  utils.sync(this, 'answerStore', function() {
-    return opts.store || new Store(opts.project || this.name);
+  utils.sync(this, 'answerStore', function fn() {
+    if (fn.store) return fn.store;
+    return (fn.store = (opts.store || new Store(opts.project || this.name)));
   });
 
-  utils.sync(this, 'defaultStore', function() {
-    return new Store('defaults');
-  });
+  this.defaultStore = defaultStore;
 
   this.use(defaults());
   this.use(answers());
@@ -310,6 +310,7 @@ Questions.prototype.getGroup = function(key) {
 
 Questions.prototype.clearCache = function() {
   answerCache = {};
+  this.answerCache = {};
   this.data = {};
 };
 
@@ -410,7 +411,6 @@ Questions.prototype.ask = function(names, options, cb) {
   var self = this;
 
   utils.async.eachSeries(questions, function(question, next) {
-    self.setData(answerCache);
     var key = question.name;
 
     debug('asking "%s":', key);
@@ -455,14 +455,8 @@ Questions.prototype.ask = function(names, options, cb) {
 };
 
 function getAnswer(app, question) {
-  var answer = question.getAnswer();
   var key = question.name;
-  if (!utils.isAnswer(answer)) {
-    answer = question.options.default;
-  }
-  if (!utils.isAnswer(answer)) {
-    answer = app.getData(key);
-  }
+  var answer = app.getData(key);
   if (!utils.isAnswer(answer)) {
     answer = utils.get(app.answerCache, key);
   }
@@ -471,6 +465,12 @@ function getAnswer(app, question) {
   }
   if (!utils.isAnswer(answer)) {
     answer = app.defaultStore.get(key);
+  }
+  if (!utils.isAnswer(answer)) {
+    answer = question.getAnswer();
+  }
+  if (!utils.isAnswer(answer)) {
+    answer = question.options.default;
   }
   return answer;
 }

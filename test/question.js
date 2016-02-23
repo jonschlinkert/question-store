@@ -253,32 +253,6 @@ describe('Question', function() {
         cb();
       });
     });
-
-    it('should ask nested questions', function(cb) {
-      var called = 0;
-      question = new Question('author.name', {
-        message: 'What is your name?',
-        save: false,
-        inquirer: {
-          prompt: function(question, next) {
-            called++;
-            assert(question);
-            assert.equal(question.type, 'input');
-            assert.equal(question.name, 'author.name');
-            assert.equal(question.message, 'What is your name?');
-            next({author: {name: 'BarBaz'}});
-          }
-        }
-      });
-
-      question.ask({ save: false }, function(err, answers) {
-        if (err) return cb(err);
-
-        assert(answers.author.name === 'BarBaz');
-        assert.equal(called, 1);
-        cb();
-      });
-    });
   });
 });
 
