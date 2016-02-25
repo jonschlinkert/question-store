@@ -18,7 +18,7 @@ var defaults = require('./lib/defaults');
 var answers = require('./lib/answers');
 var utils = require('./lib/utils');
 var data = require('./lib/data');
-var defaultStore = new Store('defaults');
+var defaultStore = new Store('default-answers');
 
 /**
  * Cache answers for a session
@@ -683,8 +683,7 @@ Object.defineProperty(Questions.prototype, 'path', {
       return (this.paths.path = filepath);
     }
 
-    var dir = utils.resolveDir('~/answers');
-    filepath = path.resolve(dir, this.name);
+    filepath = path.resolve(utils.resolveDir('~/answers'), this.name);
     return (this.paths.path = filepath);
   }
 });
