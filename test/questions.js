@@ -50,34 +50,9 @@ describe('Questions', function() {
     it('should expose a "del" method', function() {
       assert.equal(typeof questions.del, 'function');
     });
-
-    it('should expose a "hasAnswer" method', function() {
-      assert.equal(typeof questions.hasAnswer, 'function');
-    });
-  });
-
-  describe('cwd', function() {
-    it('should use process.cwd() by default', function() {
-      assert.equal(questions.cwd, process.cwd());
-    });
-
-    it('should use cwd defined on the constructor options', function() {
-      questions = new Questions({cwd: 'foo'})
-      assert.equal(questions.cwd, 'foo');
-    });
-
-    it('should update the cwd when directly defined', function() {
-      questions = new Questions({cwd: 'foo'});
-      questions.cwd = 'bar';
-      assert.equal(questions.cwd, 'bar');
-    });
   });
 
   describe('set', function() {
-    afterEach(function() {
-      questions.erase('foo');
-    });
-
     describe('properties', function() {
       it('should add a property to "questions"', function() {
         questions.set('foo');
@@ -91,19 +66,19 @@ describe('Questions', function() {
         assert.equal(questions.cache.foo.name, 'foo');
       });
 
-      it('should set the question options.name', function() {
+      it('should set the question name', function() {
         questions.set('foo');
-        assert.equal(questions.cache.foo.options.name, 'foo');
+        assert.equal(questions.cache.foo.name, 'foo');
       });
 
       it('should set the question options.message', function() {
         questions.set('foo');
-        assert.equal(questions.cache.foo.options.message, 'foo');
+        assert.equal(questions.cache.foo.message, 'foo');
       });
 
-      it('should set the question options.type', function() {
+      it('should set the question type', function() {
         questions.set('foo');
-        assert.equal(questions.cache.foo.options.type, 'input');
+        assert.equal(questions.cache.foo.type, 'input');
       });
     });
 
@@ -113,19 +88,19 @@ describe('Questions', function() {
         assert.equal(questions.cache.foo.name, 'foo');
       });
 
-      it('should set the question options.name', function() {
+      it('should set the question name', function() {
         questions.set({name: 'foo'});
-        assert.equal(questions.cache.foo.options.name, 'foo');
+        assert.equal(questions.cache.foo.name, 'foo');
       });
 
       it('should set the question options.message', function() {
         questions.set({name: 'foo'});
-        assert.equal(questions.cache.foo.options.message, 'foo');
+        assert.equal(questions.cache.foo.message, 'foo');
       });
 
-      it('should set the question options.type', function() {
+      it('should set the question type', function() {
         questions.set({name: 'foo'});
-        assert.equal(questions.cache.foo.options.type, 'input');
+        assert.equal(questions.cache.foo.type, 'input');
       });
     });
 
@@ -135,43 +110,43 @@ describe('Questions', function() {
         assert.equal(questions.cache.foo.name, 'foo');
       });
 
-      it('should set the question options.name', function() {
+      it('should set the question name', function() {
         questions.set({name: 'foo'}, {message: 'bar'});
-        assert.equal(questions.cache.foo.options.name, 'foo');
+        assert.equal(questions.cache.foo.name, 'foo');
       });
 
       it('should set the question options.message', function() {
         questions.set({name: 'foo'}, {message: 'bar'});
-        assert.equal(questions.cache.foo.options.message, 'bar');
+        assert.equal(questions.cache.foo.message, 'bar');
       });
 
-      it('should set the question options.type', function() {
+      it('should set the question type', function() {
         questions.set({name: 'foo'}, {message: 'bar', type: 'baz'});
-        assert.equal(questions.cache.foo.options.type, 'baz');
+        assert.equal(questions.cache.foo.type, 'baz');
       });
     });
 
     describe('set > value as a string', function() {
       it('should set the question options.message', function() {
         questions.set('foo', 'bar');
-        assert.equal(questions.cache.foo.options.message, 'bar');
+        assert.equal(questions.cache.foo.message, 'bar');
       });
 
-      it('should set the question options.type', function() {
+      it('should set the question type', function() {
         questions.set('foo', 'bar');
-        assert.equal(questions.cache.foo.options.type, 'input');
+        assert.equal(questions.cache.foo.type, 'input');
       });
     });
 
     describe('set > value as an object', function() {
       it('should set the question options.message', function() {
         questions.set('foo', { message: 'bar' });
-        assert.equal(questions.cache.foo.options.message, 'bar');
+        assert.equal(questions.cache.foo.message, 'bar');
       });
 
-      it('should set the question options.type', function() {
+      it('should set the question type', function() {
         questions.set('foo', { message: 'bar' });
-        assert.equal(questions.cache.foo.options.type, 'input');
+        assert.equal(questions.cache.foo.type, 'input');
       });
     });
 
@@ -186,74 +161,5 @@ describe('Questions', function() {
         assert.equal(questions.cache.foo.options.save, false);
       });
     });
-  });
-
-  describe('delQuestion', function() {
-    it('should delete a question', function() {
-      questions.set('foo', 'What is foo?');
-      questions.set('bar', 'What is bar?');
-      assert(questions.cache.foo);
-      assert(questions.cache.bar);
-      questions.delQuestion('bar');
-      assert(questions.cache.foo);
-      assert(!questions.cache.bar);
-    });
-
-    it('should remove a question name from the queue', function() {
-      questions.set('foo', 'What is foo?');
-      questions.set('bar', 'What is bar?');
-      assert(questions.queue.indexOf('foo') === 0);
-      assert(questions.queue.indexOf('bar') === 1);
-
-      questions.delQuestion('bar');
-
-      assert(questions.queue.indexOf('foo') === 0);
-      assert(questions.queue.indexOf('bar') === -1);
-    });
-  });
-
-  describe('has', function() {
-    beforeEach(function() {
-      questions = new Questions({debug: true});
-      questions.set('foo');
-      questions.set('bar');
-      questions.set('baz');
-      questions.set('qux');
-    });
-
-    afterEach(function(cb) {
-      questions.erase('foo');
-      questions.erase('bar');
-      questions.erase('baz');
-      questions.erase('qux');
-      cb();
-    });
-
-    it('should return true if an answer has been given for the cwd', function() {
-      var question = questions.get('foo');
-      question.answer.set('bar');
-
-      assert(questions.hasAnswer('foo'));
-      question.answer.del();
-    });
-
-    it('should return false if an answer has not been given for the cwd', function() {
-      assert(!questions.hasAnswer('bar'));
-      questions.setAnswer('bar', 'yyy');
-      assert(questions.hasAnswer('bar'));
-    });
-
-    it('should return true if a value has been set for the default locale', function() {
-      questions.set('baz');
-      questions.get('baz')
-        .answer.setDefault('bar');
-
-      assert(questions.hasAnswer('baz'));
-    });
-
-    it('should return false if a default value has not been set', function() {
-      questions.set('qux');
-      assert(!questions.hasAnswer('qux'));
-    });;
   });
 });
