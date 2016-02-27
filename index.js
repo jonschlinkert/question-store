@@ -210,10 +210,95 @@ Questions.prototype.addQuestion = function(name, val, options) {
  * @api public
  */
 
-Questions.prototype.choices = function() {
-  var question = utils.toChoices.apply(null, arguments);
+Questions.prototype.choices = function(name, msg, choices, options) {
+  var choices = utils.toChoices();
+  var question = choices.apply(null, arguments);
   if (!question.hasOwnProperty('save')) {
     question.save = false;
+  }
+  this.set(question.name, question);
+  return this;
+};
+
+/**
+ * Create a "list" question from an array of values.
+ *
+ * ```js
+ * questions.list('foo', ['a', 'b', 'c']);
+ *
+ * // or
+ * questions.list('foo', {
+ *   message: 'Favorite letter?',
+ *   choices: ['a', 'b', 'c']
+ * });
+ * ```
+ * @param {String|Array} `queue` Name or array of question names.
+ * @param {Object|Function} `options` Question options or callback function
+ * @param {Function} `callback` callback function
+ * @api public
+ */
+
+Questions.prototype.list = function(name, msg, list, options) {
+  var choices = utils.toChoices({type: 'list'});
+  var question = choices.apply(null, arguments);
+  if (options) {
+    question.options = options;
+  }
+  this.set(question.name, question);
+  return this;
+};
+
+/**
+ * Create a "rawlist" question from an array of values.
+ *
+ * ```js
+ * questions.rawlist('foo', ['a', 'b', 'c']);
+ *
+ * // or
+ * questions.rawlist('foo', {
+ *   message: 'Favorite letter?',
+ *   choices: ['a', 'b', 'c']
+ * });
+ * ```
+ * @param {String|Array} `queue` Name or array of question names.
+ * @param {Object|Function} `options` Question options or callback function
+ * @param {Function} `callback` callback function
+ * @api public
+ */
+
+Questions.prototype.rawlist = function(name, msg, list, options) {
+  var choices = utils.toChoices({type: 'rawlist'});
+  var question = choices.apply(null, arguments);
+  if (options) {
+    question.options = options;
+  }
+  this.set(question.name, question);
+  return this;
+};
+
+/**
+ * Create an "expand" question from an array of values.
+ *
+ * ```js
+ * questions.expand('foo', ['a', 'b', 'c']);
+ *
+ * // or
+ * questions.expand('foo', {
+ *   message: 'Favorite letter?',
+ *   choices: ['a', 'b', 'c']
+ * });
+ * ```
+ * @param {String|Array} `queue` Name or array of question names.
+ * @param {Object|Function} `options` Question options or callback function
+ * @param {Function} `callback` callback function
+ * @api public
+ */
+
+Questions.prototype.expand = function(name, msg, list, options) {
+  var choices = utils.toChoices({type: 'expand'});
+  var question = choices.apply(null, arguments);
+  if (options) {
+    question.options = options;
   }
   this.set(question.name, question);
   return this;

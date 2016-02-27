@@ -21,9 +21,10 @@
     "test": "mocha"
   },
   "dependencies": {
+    "arr-flatten": "^1.0.1",
     "arr-union": "^3.1.0",
     "async": "^1.5.2",
-    "data-store": "^0.15.1",
+    "data-store": "^0.15.3",
     "debug": "^2.2.0",
     "define-property": "^0.2.5",
     "get-value": "^2.0.3",
@@ -36,7 +37,9 @@
     "omit-empty": "^0.3.2",
     "option-cache": "^3.3.4",
     "project-name": "^0.2.4",
+    "resolve-dir": "^0.1.0",
     "set-value": "^0.3.3",
+    "to-choices": "^0.2.0",
     "use": "^1.1.2"
   },
   "devDependencies": {
@@ -49,7 +52,6 @@
     "mocha": "*",
     "question-force": "^0.1.0",
     "question-match": "^0.1.1",
-    "resolve-dir": "^0.1.0",
     "through2": "^2.0.1"
   },
   "keywords": [
