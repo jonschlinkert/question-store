@@ -210,7 +210,7 @@ Questions.prototype.addQuestion = function(name, val, options) {
  * @api public
  */
 
-Questions.prototype.choices = function(name, msg, choices, options) {
+Questions.prototype.choices = function(name, msg, items, options) {
   var choices = utils.toChoices();
   var question = choices.apply(null, arguments);
   if (!question.hasOwnProperty('save')) {
