@@ -3,7 +3,6 @@
 var async = require('async');
 var use = require('use');
 var util = require('util');
-var path = require('path');
 var debug = require('debug')('question-store');
 var Store = require('data-store');
 var Options = require('option-cache');
@@ -15,7 +14,7 @@ var utils = require('./lib/utils');
  * and potentially across instances
  */
 
-var answerCache = {};
+var sessionAnswers = {};
 
 /**
  * Create an instance of `Questions` with the given `options`.
@@ -46,7 +45,6 @@ function Questions(options) {
 
 util.inherits(Questions, Options);
 
-
 /**
  * Intialize question-store
  */
@@ -55,24 +53,25 @@ Questions.prototype.initQuestions = function(opts) {
   this.inquirer = opts.inquirer || utils.inquirer();
   this.project = opts.project || utils.project(process.cwd());
 
-  this.answers = answerCache;
   this.data = opts.data || {};
+  this.answers = sessionAnswers;
+
   this.cache = {};
   this.queue = [];
 
   // persist answers that the user has marked as a "global default"
-  utils.sync(this, 'defaults',  function() {
+  utils.sync(this, 'global', function() {
     return new Store('global-answers');
   });
 
   // persist project-specific answers
   utils.sync(this, 'store', function() {
-    return new Store(this.project);
+    return opts.store || new Store(this.project);
   });
 
   // persist project-specific hints
-  utils.sync(this, 'hints',  function() {
-    return new Store('hints/' + this.project);
+  utils.sync(this, 'hints', function() {
+    return new Store(this.project + '/hints');
   });
 };
 
@@ -187,7 +186,7 @@ Questions.prototype.del = function(key) {
  */
 
 Questions.prototype.clearAnswers = function() {
-  this.answers = answerCache = {};
+  this.answers = sessionAnswers = {};
   this.data = {};
 };
 
@@ -244,8 +243,6 @@ Questions.prototype.ask = function(queue, config, cb) {
   }
 
   var questions = this.buildQueue(queue);
-  var hints = this.hints; // 'hint' store
-  var store = this.store; // project-specific answer store
   var self = this;
 
   async.reduce(questions, this.answers, function(answers, key, next) {
@@ -254,11 +251,11 @@ Questions.prototype.ask = function(queue, config, cb) {
       var data = utils.merge({}, self.data, opts);
 
       var question = self.get(key);
-      var val = question.answer(answers, data, store, hints);
+      var val = question.answer(answers, data, self.store, self.hints);
       var options = question.opts(opts);
 
-      if (utils.isEmpty(val) && options.enabled('global')) {
-        val = globalStore.get(key);
+      if (utils.isAnswer(val) && options.enabled('global')) {
+        val = this.global.get(key);
       }
 
       // emit question before building options
@@ -276,7 +273,7 @@ Questions.prototype.ask = function(queue, config, cb) {
       var force = options.get('force');
       var isForced = force === true || utils.matchesKey(force, key);
 
-      if (!isForced && !utils.isEmpty(val)) {
+      if (!isForced && utils.isAnswer(val)) {
         utils.set(answers, question.name, val);
         question.next(val, self, answers, next);
         return;
@@ -286,24 +283,24 @@ Questions.prototype.ask = function(queue, config, cb) {
         try {
           var val = answer[question.name];
 
-          if (utils.isEmpty(val)) {
+          if (!utils.isAnswer(val)) {
             next(null, answers);
             return;
           }
 
           // persist to 'project' store if 'save' is not disabled
           if (!options.disabled('save')) {
-            store.set(question.name, val);
+            self.store.set(question.name, val);
           }
 
           // persist to 'global-defaults' store if 'global' is enabled
           if (options.enabled('global')) {
-            globalStore.set(question.name, val);
+            self.global.set(question.name, val);
           }
 
           // persist to project-specific 'hint' store, if 'hint' is not disabled
           if (!options.disabled('hint')) {
-            hints.set(question.name, val);
+            self.hints.set(question.name, val);
           }
 
           // emit answer
@@ -312,7 +309,6 @@ Questions.prototype.ask = function(queue, config, cb) {
           // set answer on 'answers' cache
           utils.set(answers, question.name, val);
           question.next(val, self, answers, next);
-
         } catch (err) {
           self.emit('error', err);
           next(err);
@@ -357,14 +353,14 @@ Questions.prototype.buildQueue = function(questions) {
  * @api public
  */
 
-Questions.prototype.normalize = function(key) {
+Questions.prototype.normalize = function(name) {
   // get `name` from question object
-  if (utils.isQuestion(key)) {
-    return [question.name];
+  if (utils.isQuestion(name)) {
+    return [name.name];
   }
 
-  if (this.cache.hasOwnProperty(key)) {
-    return [key];
+  if (this.cache.hasOwnProperty(name)) {
+    return [name];
   }
 
   // filter keys with dot-notation
@@ -372,7 +368,7 @@ Questions.prototype.normalize = function(key) {
   var keys = [];
   for (var prop in this.cache) {
     if (this.cache.hasOwnProperty(prop)) {
-      if (prop.indexOf(key) === 0) {
+      if (prop.indexOf(name) === 0) {
         keys.push(prop);
         matched++;
       }

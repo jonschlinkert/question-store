@@ -5,9 +5,10 @@ var path = require('path');
 var assert = require('assert');
 var utils = require('../lib/utils');
 var Questions = require('..');
+var resolveDir = require('resolve-dir');
 var questions;
 
-var dir = utils.resolveDir('~/answers');
+var dir = resolveDir('~/answers');
 
 function json(filename) {
   return require(path.resolve(dir, filename));
