@@ -23,6 +23,7 @@ var hints;
  */
 
 var sessionAnswers = {};
+var forced = {};
 
 /**
  * Create an instance of `Questions` with the given `options`.
@@ -493,6 +494,11 @@ Questions.prototype.ask = function(queue, config, cb) {
 
       var force = options.get('force');
       var isForced = force === true || utils.matchesKey(force, key);
+      if (!forced.hasOwnProperty(key)) {
+        forced[key] = true;
+      } else {
+        isForced = false;
+      }
 
       if (!isForced && utils.isAnswer(val)) {
         debug('question "%s", using answer "%j"', key, val);
