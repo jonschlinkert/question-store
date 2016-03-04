@@ -312,7 +312,6 @@ Questions.prototype.expand = function(name, msg, list, options) {
  *
  * ```js
  * questions.choices('foo', ['a', 'b', 'c']);
- *
  * // or
  * questions.choices('foo', {
  *   message: 'Favorite letter?',
