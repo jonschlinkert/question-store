@@ -85,8 +85,10 @@ Questions.prototype.createStores = function(options) {
     debug('creating globals store');
 
     if (typeof globals === 'undefined') {
-      globals = new Store('globals', { cwd: utils.resolveDir('~/') });
       debug('created globals store');
+      globals = options.globals || new Store('globals', {
+        cwd: utils.resolveDir('~/')
+      });
     }
     return globals;
   });
