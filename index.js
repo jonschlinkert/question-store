@@ -504,6 +504,7 @@ Questions.prototype.ask = function(queue, config, cb) {
       if (!isForced && utils.isAnswer(val)) {
         debug('question "%s", using answer "%j"', key, val);
         utils.set(answers, key, val);
+        self.emit('answer', question, val, answers);
         question.next(val, self, answers, next);
         return;
       }
@@ -540,11 +541,13 @@ Questions.prototype.ask = function(queue, config, cb) {
             self.hints.set(key, val);
           }
 
+          // set answer on 'answers' cache
+          utils.set(answers, key, val);
+
           // emit answer
           self.emit('answer', question, val, answers);
 
-          // set answer on 'answers' cache
-          utils.set(answers, key, val);
+          // next question
           question.next(val, self, answers, next);
         } catch (err) {
           self.emit('error', err);
