@@ -1,10 +1,8 @@
 'use strict';
 
-var async = require('async');
 var use = require('use');
 var util = require('util');
 var debug = require('debug')('questions');
-var Store = require('data-store');
 var Options = require('option-cache');
 var Question = require('./lib/question');
 var utils = require('./lib/utils');
@@ -86,7 +84,7 @@ Questions.prototype.createStores = function(options) {
 
     if (typeof globals === 'undefined') {
       debug('created globals store');
-      globals = options.globals || new Store('globals', {
+      globals = options.globals || new utils.Store('globals', {
         cwd: utils.resolveDir('~/')
       });
     }
@@ -98,7 +96,7 @@ Questions.prototype.createStores = function(options) {
     debug('creating project store');
 
     if (typeof store === 'undefined') {
-      store = options.store || new Store(this.project);
+      store = options.store || new utils.Store(this.project);
       debug('created project store');
     }
     return store;
@@ -462,7 +460,7 @@ Questions.prototype.ask = function(queue, config, cb) {
   var questions = this.buildQueue(queue);
   var self = this;
 
-  async.reduce(questions, this.answers, function(answers, key, next) {
+  utils.async.reduce(questions, this.answers, function(answers, key, next) {
     debug('asking question "%s"', key);
 
     try {
