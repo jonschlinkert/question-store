@@ -2,6 +2,7 @@
 
 var use = require('use');
 var util = require('util');
+var path = require('path');
 var debug = require('debug')('questions');
 var Options = require('option-cache');
 var Question = require('./lib/question');
@@ -54,9 +55,9 @@ util.inherits(Questions, Options);
 
 Questions.prototype.initQuestions = function(opts) {
   debug('initializing question-store');
+  this.answers = sessionAnswers;
   this.inquirer = opts.inquirer || utils.inquirer();
   this.project = opts.project || utils.project(process.cwd());
-  this.answers = sessionAnswers;
   this.data = opts.data || {};
   this.cache = {};
   this.queue = [];
@@ -107,7 +108,8 @@ Questions.prototype.createStores = function(options) {
     debug('creating hints store');
 
     if (typeof hints === 'undefined') {
-      hints = self.store.create('hints');
+      var name = path.basename(self.options.cwd || process.cwd());
+      hints = self.store.create(name + '/hints');
       debug('created hints store');
     }
     return hints;
