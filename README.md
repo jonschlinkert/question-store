@@ -1,4 +1,4 @@
-# question-store [![NPM version](https://img.shields.io/npm/v/question-store.svg)](https://www.npmjs.com/package/question-store) [![Build Status](https://img.shields.io/travis/jonschlinkert/question-store.svg)](https://travis-ci.org/jonschlinkert/question-store)
+# question-store [![NPM version](https://img.shields.io/npm/v/question-store.svg?style=flat)](https://www.npmjs.com/package/question-store) [![NPM downloads](https://img.shields.io/npm/dm/question-store.svg?style=flat)](https://npmjs.org/package/question-store) [![Build Status](https://img.shields.io/travis/jonschlinkert/question-store.svg?style=flat)](https://travis-ci.org/jonschlinkert/question-store)
 
 > Ask questions, persist the answers. Basic support for i18n and storing answers based on current working directory.
 
@@ -36,7 +36,7 @@ var Questions = require('question-store');
 
 ## API
 
-### [Questions](index.js#L36)
+### [Questions](index.js#L37)
 
 Create an instance of `Questions` with the given `options`.
 
@@ -50,7 +50,7 @@ Create an instance of `Questions` with the given `options`.
 var Questions = new Questions(options);
 ```
 
-### [.createStores](index.js#L78)
+### [.createStores](index.js#L79)
 
 Create stores for persisting data across sessions.
 
@@ -63,7 +63,7 @@ Create stores for persisting data across sessions.
 * `options` **{Object}**
 * `returns` **{Object}**
 
-### [.set](index.js#L148)
+### [.set](index.js#L150)
 
 Calls [addQuestion](#addQuestion), with the only difference being that `.set` returns the `questions` instance and `.addQuestion` returns the question object. So use `.set` if you want to chain questions, or `.addQuestion` if you need the created question object.
 
@@ -95,7 +95,7 @@ questions.set({
 });
 ```
 
-### [.addQuestion](index.js#L180)
+### [.addQuestion](index.js#L182)
 
 Add a question to be asked at a later point. Creates an instance of [Question](#question), so any `Question` options or settings may be used. Also, the default `type` is `input` if not defined by the user.
 
@@ -124,7 +124,7 @@ questions.addQuestion({
 });
 ```
 
-### [.choices](index.js#L214)
+### [.choices](index.js#L216)
 
 Create a "choices" question from an array of values.
 
@@ -146,7 +146,7 @@ questions.choices('foo', {
 });
 ```
 
-### [.list](index.js#L242)
+### [.list](index.js#L244)
 
 Create a "list" question from an array of values.
 
@@ -168,7 +168,7 @@ questions.list('foo', {
 });
 ```
 
-### [.rawlist](index.js#L270)
+### [.rawlist](index.js#L272)
 
 Create a "rawlist" question from an array of values.
 
@@ -190,7 +190,7 @@ questions.rawlist('foo', {
 });
 ```
 
-### [.expand](index.js#L298)
+### [.expand](index.js#L300)
 
 Create an "expand" question from an array of values.
 
@@ -212,7 +212,7 @@ questions.expand('foo', {
 });
 ```
 
-### [.confirm](index.js#L325)
+### [.confirm](index.js#L327)
 
 Create a "choices" question from an array of values.
 
@@ -233,7 +233,7 @@ questions.choices('foo', {
 });
 ```
 
-### [.get](index.js#L344)
+### [.get](index.js#L346)
 
 Get question `name`, or group `name` if question is not found. You can also do a direct lookup using `quesions.cache['foo']`.
 
@@ -249,7 +249,7 @@ var name = questions.get('name');
 //=> question object
 ```
 
-### [.has](index.js#L360)
+### [.has](index.js#L362)
 
 Returns true if `questions.cache` or `questions.groups` has question `name`.
 
@@ -262,7 +262,7 @@ var name = questions.has('name');
 //=> true
 ```
 
-### [.del](index.js#L385)
+### [.del](index.js#L387)
 
 Delete the given question or any questions that have the given namespace using dot-notation.
 
@@ -281,7 +281,7 @@ questions.get('author.name');
 //=> undefined
 ```
 
-### [.clearAnswers](index.js#L403)
+### [.clearAnswers](index.js#L405)
 
 Clear all cached answers.
 
@@ -291,7 +291,7 @@ Clear all cached answers.
 questions.clearAnswers();
 ```
 
-### [.clearQuestions](index.js#L418)
+### [.clearQuestions](index.js#L420)
 
 Clear all questions from the cache.
 
@@ -301,7 +301,7 @@ Clear all questions from the cache.
 questions.clearQuestions();
 ```
 
-### [.clear](index.js#L433)
+### [.clear](index.js#L435)
 
 Clear all cached questions and answers.
 
@@ -311,7 +311,7 @@ Clear all cached questions and answers.
 questions.clear();
 ```
 
-### [.ask](index.js#L452)
+### [.ask](index.js#L454)
 
 Ask one or more questions, with the given `options` and callback.
 
@@ -329,7 +329,7 @@ questions.ask(['name', 'description'], function(err, answers) {
 });
 ```
 
-### [.normalize](index.js#L598)
+### [.normalize](index.js#L600)
 
 Normalize the given value to return an array of question keys.
 
@@ -413,7 +413,10 @@ question.force();
 
 ## Related projects
 
+You might also be interested in these projects:
+
 * [answer-store](https://www.npmjs.com/package/answer-store): Store answers to user prompts, based on locale and/or current working directory. | [homepage](https://github.com/jonschlinkert/answer-store)
+* [base-questions](https://www.npmjs.com/package/base-questions): Plugin for base-methods that adds methods for prompting the user and storing the answers on… [more](https://www.npmjs.com/package/base-questions) | [homepage](https://github.com/node-base/base-questions)
 * [inquirer](https://www.npmjs.com/package/inquirer): A collection of common interactive command line user interfaces. | [homepage](https://github.com/sboudrias/Inquirer.js)
 * [question-cache](https://www.npmjs.com/package/question-cache): A wrapper around inquirer that makes it easy to create and selectively reuse questions. | [homepage](https://github.com/jonschlinkert/question-cache)
 
@@ -447,14 +450,16 @@ $ npm install -d && npm test
 
 **Jon Schlinkert**
 
+Follow me on GitHub or Twitter for updates about question-store and my other libraries:
+
 * [github/jonschlinkert](https://github.com/jonschlinkert)
 * [twitter/jonschlinkert](http://twitter.com/jonschlinkert)
 
 ## License
 
-Copyright © 2016 [Jon Schlinkert](https://github.com/jonschlinkert)
+Copyright © 2016, [Jon Schlinkert](https://github.com/jonschlinkert).
 Released under the [MIT license](https://github.com/jonschlinkert/question-store/blob/master/LICENSE).
 
 ***
 
-_This file was generated by [verb](https://github.com/verbose/verb), v0.9.0, on March 11, 2016._
+_This file was generated by [verb](https://github.com/verbose/verb), v, on April 05, 2016._
