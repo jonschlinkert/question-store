@@ -8,7 +8,6 @@
 - [Usage](#usage)
 - [API](#api)
   * [Questions](#questions)
-  * [Question](#question)
 - [Related projects](#related-projects)
 - [Contributing](#contributing)
 - [Building docs](#building-docs)
@@ -26,19 +25,19 @@ Install with [npm](https://www.npmjs.com/):
 $ npm install question-store --save
 ```
 
-Similar to [question-cache](https://github.com/jonschlinkert/question-cache), but persists answers to disk and supports locales and storing answers based on current working directory.
+Inherits [question-cache](https://github.com/jonschlinkert/question-cache) and persists answers to disk. Answers are stored based on current working directory.
 
 ## Usage
 
 ```js
-var Questions = require('question-store');
+var QuestionStore = require('question-store');
 ```
 
 ## API
 
-### [Questions](index.js#L37)
+### [QuestionsStore](index.js#L26)
 
-Create an instance of `Questions` with the given `options`.
+Create an instance of `QuestionsStore` with the given `options`.
 
 **Params**
 
@@ -47,10 +46,10 @@ Create an instance of `Questions` with the given `options`.
 **Example**
 
 ```js
-var Questions = new Questions(options);
+var QuestionsStore = new QuestionsStore(options);
 ```
 
-### [.createStores](index.js#L81)
+### [.createStores](index.js#L50)
 
 Create stores for persisting data across sessions.
 
@@ -62,354 +61,6 @@ Create stores for persisting data across sessions.
 
 * `options` **{Object}**
 * `returns` **{Object}**
-
-### [.set](index.js#L152)
-
-Calls [addQuestion](#addQuestion), with the only difference being that `.set` returns the `questions` instance and `.addQuestion` returns the question object. So use `.set` if you want to chain questions, or `.addQuestion` if you need the created question object.
-
-**Params**
-
-* `name` **{Object|String}**: Question name, message (string), or question/options object.
-* `value` **{Object|String}**: Question message (string), or question/options object.
-* `options` **{Object|String}**: Question/options object.
-
-**Example**
-
-```js
-questions
-  .set('drink', 'What is your favorite beverage?')
-  .set('color', 'What is your favorite color?')
-  .set('season', 'What is your favorite season?');
-
-// or
-questions.set('drink', {
-  type: 'input',
-  message: 'What is your favorite beverage?'
-});
-
-// or
-questions.set({
-  name: 'drink'
-  type: 'input',
-  message: 'What is your favorite beverage?'
-});
-```
-
-### [.addQuestion](index.js#L184)
-
-Add a question to be asked at a later point. Creates an instance of [Question](#question), so any `Question` options or settings may be used. Also, the default `type` is `input` if not defined by the user.
-
-**Params**
-
-* `name` **{Object|String}**: Question name, message (string), or question/options object.
-* `value` **{Object|String}**: Question message (string), or question/options object.
-* `options` **{Object|String}**: Question/options object.
-
-**Example**
-
-```js
-questions.addQuestion('drink', 'What is your favorite beverage?');
-
-// or
-questions.addQuestion('drink', {
-  type: 'input',
-  message: 'What is your favorite beverage?'
-});
-
-// or
-questions.addQuestion({
-  name: 'drink'
-  type: 'input',
-  message: 'What is your favorite beverage?'
-});
-```
-
-### [.choices](index.js#L218)
-
-Create a "choices" question from an array of values.
-
-**Params**
-
-* `queue` **{String|Array}**: Name or array of question names.
-* `options` **{Object|Function}**: Question options or callback function
-* `callback` **{Function}**: callback function
-
-**Example**
-
-```js
-questions.choices('foo', ['a', 'b', 'c']);
-
-// or
-questions.choices('foo', {
-  message: 'Favorite letter?',
-  choices: ['a', 'b', 'c']
-});
-```
-
-### [.list](index.js#L246)
-
-Create a "list" question from an array of values.
-
-**Params**
-
-* `queue` **{String|Array}**: Name or array of question names.
-* `options` **{Object|Function}**: Question options or callback function
-* `callback` **{Function}**: callback function
-
-**Example**
-
-```js
-questions.list('foo', ['a', 'b', 'c']);
-
-// or
-questions.list('foo', {
-  message: 'Favorite letter?',
-  choices: ['a', 'b', 'c']
-});
-```
-
-### [.rawlist](index.js#L274)
-
-Create a "rawlist" question from an array of values.
-
-**Params**
-
-* `queue` **{String|Array}**: Name or array of question names.
-* `options` **{Object|Function}**: Question options or callback function
-* `callback` **{Function}**: callback function
-
-**Example**
-
-```js
-questions.rawlist('foo', ['a', 'b', 'c']);
-
-// or
-questions.rawlist('foo', {
-  message: 'Favorite letter?',
-  choices: ['a', 'b', 'c']
-});
-```
-
-### [.expand](index.js#L302)
-
-Create an "expand" question from an array of values.
-
-**Params**
-
-* `queue` **{String|Array}**: Name or array of question names.
-* `options` **{Object|Function}**: Question options or callback function
-* `callback` **{Function}**: callback function
-
-**Example**
-
-```js
-questions.expand('foo', ['a', 'b', 'c']);
-
-// or
-questions.expand('foo', {
-  message: 'Favorite letter?',
-  choices: ['a', 'b', 'c']
-});
-```
-
-### [.confirm](index.js#L329)
-
-Create a "choices" question from an array of values.
-
-**Params**
-
-* `queue` **{String|Array}**: Name or array of question names.
-* `options` **{Object|Function}**: Question options or callback function
-* `callback` **{Function}**: callback function
-
-**Example**
-
-```js
-questions.choices('foo', ['a', 'b', 'c']);
-// or
-questions.choices('foo', {
-  message: 'Favorite letter?',
-  choices: ['a', 'b', 'c']
-});
-```
-
-### [.get](index.js#L348)
-
-Get question `name`, or group `name` if question is not found. You can also do a direct lookup using `quesions.cache['foo']`.
-
-**Params**
-
-* `name` **{String}**
-* `returns` **{Object}**: Returns the question object.
-
-**Example**
-
-```js
-var name = questions.get('name');
-//=> question object
-```
-
-### [.has](index.js#L364)
-
-Returns true if `questions.cache` or `questions.groups` has question `name`.
-
-* `returns` **{String}**: The name of the question to check
-
-**Example**
-
-```js
-var name = questions.has('name');
-//=> true
-```
-
-### [.del](index.js#L389)
-
-Delete the given question or any questions that have the given namespace using dot-notation.
-
-* `returns` **{String}**: The name of the question to delete
-
-**Example**
-
-```js
-questions.del('name');
-questions.get('name');
-//=> undefined
-
-// using dot-notation
-questions.del('author');
-questions.get('author.name');
-//=> undefined
-```
-
-### [.clearAnswers](index.js#L407)
-
-Clear all cached answers.
-
-**Example**
-
-```js
-questions.clearAnswers();
-```
-
-### [.clearQuestions](index.js#L422)
-
-Clear all questions from the cache.
-
-**Example**
-
-```js
-questions.clearQuestions();
-```
-
-### [.clear](index.js#L437)
-
-Clear all cached questions and answers.
-
-**Example**
-
-```js
-questions.clear();
-```
-
-### [.ask](index.js#L456)
-
-Ask one or more questions, with the given `options` and callback.
-
-**Params**
-
-* `queue` **{String|Array}**: Name or array of question names.
-* `options` **{Object|Function}**: Question options or callback function
-* `callback` **{Function}**: callback function
-
-**Example**
-
-```js
-questions.ask(['name', 'description'], function(err, answers) {
-  console.log(answers);
-});
-```
-
-### [.normalize](index.js#L602)
-
-Normalize the given value to return an array of question keys.
-
-**Params**
-
-* **{[type]}**: key
-* `returns` **{[type]}**
-
-### [Question](lib/question.js#L25)
-
-Create new `Question` store `name`, with the given `options`.
-
-**Params**
-
-* `name` **{String}**: The question property name.
-* `options` **{Object}**: Store options
-
-**Example**
-
-```js
-var question = new Question(name, options);
-```
-
-### [.next](lib/question.js#L106)
-
-Optionally define the next question to ask by setting a custom `next` function on the question object.
-
-**Params**
-
-* `answer` **{Object}**
-* `questions` **{Object}**
-* `answers` **{Object}**
-* `next` **{Function}**
-* `returns` **{Function}**
-
-**Example**
-
-```js
-questions.choice('deps', 'Where?')
-questions.set('install', 'Want to install?', {
-  type: 'confirm',
-  next: function(answer, questions, answers, cb) {
-    if (answer === true) {
-      questions.ask('config.other', cb);
-    } else {
-      cb(null, answers);
-    }
-  }
-});
-```
-
-### [.answer](lib/question.js#L155)
-
-Resolve the answer for the question from the given data sources, then set the question's `default` value with any stored hints or answers if not already defined.
-
-**Params**
-
-* `answers` **{Object}**
-* `data` **{Object}**
-* `store` **{Object}**
-* `hints` **{Object}**
-* `returns` **{Object}**
-
-**Example**
-
-```js
-question.answer(answers, data, store, hints);
-```
-
-### [.force](lib/question.js#L206)
-
-Force the question to be asked.
-
-* `returns` **{undefined}**
-
-**Example**
-
-```js
-question.force();
-```
 
 ## Related projects
 
