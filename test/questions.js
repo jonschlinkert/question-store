@@ -3,15 +3,13 @@
 require('mocha');
 var path = require('path');
 var assert = require('assert');
-var utils = require('../lib/utils');
 var Questions = require('..');
-var resolveDir = require('resolve-dir');
+var utils = require('../lib/utils');
+var home = require('os-homedir');
 var questions;
 
-var dir = resolveDir('~/answers');
-
 function json(filename) {
-  return require(path.resolve(dir, filename));
+  return require(path.resolve(home(), filename));
 }
 
 describe('Questions', function() {
