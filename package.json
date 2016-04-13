@@ -11,7 +11,7 @@
   "license": "MIT",
   "files": [
     "index.js",
-    "lib/"
+    "lib"
   ],
   "main": "index.js",
   "engines": {
@@ -71,9 +71,9 @@
     "related": {
       "list": [
         "answer-store",
-        "question-cache",
+        "base-questions",
         "inquirer",
-        "base-questions"
+        "question-cache"
       ]
     },
     "reflinks": [
