@@ -38,8 +38,10 @@ function Questions(options) {
   if (!(this instanceof Questions)) {
     return new Questions(options);
   }
+
   Options.call(this, options);
   use(this);
+  this.options = utils.omitEmpty(options || {});
   this.initQuestions(this.options);
 }
 
@@ -57,7 +59,7 @@ Questions.prototype.initQuestions = function(opts) {
   debug('initializing question-store');
   this.answers = sessionAnswers;
   this.inquirer = opts.inquirer || utils.inquirer();
-  this.project = opts.project || utils.project(process.cwd());
+  this.project = opts.project || utils.project(opts.cwd || process.cwd());
   this.data = opts.data || {};
   this.cache = {};
   this.queue = [];
@@ -453,10 +455,10 @@ Questions.prototype.clear = function() {
 
 Questions.prototype.ask = function(queue, config, cb) {
   if (typeof queue === 'function') {
-    return this.ask(this.queue, {}, queue);
+    return this.ask.call(this, this.queue, {}, queue);
   }
   if (typeof config === 'function') {
-    return this.ask(queue, {}, config);
+    return this.ask.call(this, queue, {}, config);
   }
 
   var questions = this.buildQueue(queue);
