@@ -35,7 +35,7 @@ var QuestionStore = require('question-store');
 
 ## API
 
-### [QuestionsStore](index.js#L26)
+### [QuestionsStore](index.js#L27)
 
 Create an instance of `QuestionsStore` with the given `options`.
 
@@ -49,7 +49,7 @@ Create an instance of `QuestionsStore` with the given `options`.
 var QuestionsStore = new QuestionsStore(options);
 ```
 
-### [.createStores](index.js#L50)
+### [.createStores](index.js#L51)
 
 Create stores for persisting data across sessions.
 

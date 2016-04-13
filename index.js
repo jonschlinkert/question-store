@@ -1,6 +1,7 @@
 'use strict';
 
 var util = require('util');
+var path = require('path');
 var debug = require('debug')('question-store');
 var Cache = require('question-cache');
 var utils = require('./lib/utils');
@@ -86,8 +87,8 @@ QuestionsStore.prototype.createStores = function(app, options) {
 };
 
 QuestionsStore.prototype.listen = function(app) {
-  this.on('ask', function(vak, key, question, answers) {
-    if (!utils.isAnswer(val) && options.enabled('global')) {
+  this.on('ask', function(val, key, question, answers) {
+    if (!utils.isAnswer(val) && app.options.enabled('global')) {
       question.answer = app.globals.get(key);
       debug('no answer found, using global: "%s"', val);
     }
