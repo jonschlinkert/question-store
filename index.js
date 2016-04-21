@@ -88,7 +88,7 @@ QuestionsStore.prototype.createStores = function(app, options) {
 
 QuestionsStore.prototype.listen = function(app) {
   this.on('ask', function(val, key, question, answers) {
-    if (!utils.isAnswer(val) && app.options.enabled('global')) {
+    if (!utils.isAnswer(val) && app.enabled('global')) {
       question.answer = app.globals.get(key);
       debug('no answer found, using global: "%s"', val);
     }
