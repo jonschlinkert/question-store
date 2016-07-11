@@ -1,5 +1,6 @@
 'use strict';
 
+var os = require('os');
 var util = require('util');
 var path = require('path');
 var debug = require('debug')('question-store');
@@ -52,11 +53,10 @@ QuestionsStore.prototype.createStores = function(app, options) {
   // persist answers to questions with `{ global: true }`
   utils.sync(this, 'globals', function() {
     debug('creating globals store');
-
     if (typeof globals === 'undefined') {
       debug('created globals store');
-      globals = options.globals || new utils.Store('globals', {
-        cwd: utils.home()
+      globals = options.globals || new utils.Store(path.join('question-store', 'globals'), {
+        cwd: os.homedir()
       });
     }
     return globals;
@@ -65,9 +65,8 @@ QuestionsStore.prototype.createStores = function(app, options) {
   // persist project-specific answers
   utils.sync(this, 'store', function() {
     debug('creating project store');
-
     if (typeof store === 'undefined') {
-      store = options.store || new utils.Store(app.project);
+      store = options.store || new utils.Store(path.join('question-store', app.project || ''));
       debug('created project store');
     }
     return store;
@@ -76,7 +75,6 @@ QuestionsStore.prototype.createStores = function(app, options) {
   // persist project-specific hints
   utils.sync(this, 'hints', function() {
     debug('creating hints store');
-
     if (typeof hints === 'undefined') {
       var name = path.basename(app.options.cwd || process.cwd());
       hints = app.store.create(name + '/hints');

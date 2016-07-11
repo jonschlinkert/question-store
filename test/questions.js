@@ -1,15 +1,15 @@
 'use strict';
 
 require('mocha');
+var os = require('os');
 var path = require('path');
 var assert = require('assert');
 var Questions = require('..');
 var utils = require('../lib/utils');
-var home = require('os-homedir');
 var questions;
 
 function json(filename) {
-  return require(path.resolve(home(), filename));
+  return require(path.resolve(os.homedir(), filename));
 }
 
 describe('Questions', function() {
