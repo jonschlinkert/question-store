@@ -62,6 +62,11 @@ QuestionsStore.prototype.createStores = function(app, options) {
     return globals;
   });
 
+  // load common-config
+  utils.sync(this, 'common', function() {
+    return utils.config;
+  });
+
   // persist project-specific answers
   utils.sync(this, 'store', function() {
     debug('creating project store');
@@ -86,9 +91,13 @@ QuestionsStore.prototype.createStores = function(app, options) {
 
 QuestionsStore.prototype.listen = function(app) {
   this.on('ask', function(val, key, question, answers) {
+    if (!utils.isAnswer(val) && app.enabled('common')) {
+      val = question.answer = app.common.get(key);
+      debug('no answer found, using common-config: "%s"', val);
+    }
     if (!utils.isAnswer(val) && app.enabled('global')) {
       question.answer = app.globals.get(key);
-      debug('no answer found, using global: "%s"', val);
+      debug('no answer found, using global-store: "%s"', val);
     }
   });
 
@@ -96,7 +105,7 @@ QuestionsStore.prototype.listen = function(app) {
     var options = question._options;
 
     // persist to 'project' store if 'save' is not disabled
-    if (!options.disabled('save')) {
+    if (options.enabled('save')) {
       debug('saving answer in project store: %j', val);
       app.store.set(key, val);
     }
