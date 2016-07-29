@@ -26,6 +26,7 @@ var hints;
  */
 
 function QuestionsStore(options) {
+  debug('initializing from <%s>', __filename);
   Cache.call(this, options);
   this.createStores(this, this.options);
   this.listen(this);
