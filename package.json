@@ -1,7 +1,7 @@
 {
   "name": "question-store",
   "description": "Ask questions, persist the answers. Basic support for i18n and storing answers based on current working directory.",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "homepage": "https://github.com/jonschlinkert/question-store",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "repository": "jonschlinkert/question-store",
