@@ -78,12 +78,11 @@ QuestionsStore.prototype.createStores = function(app, options) {
     return store;
   });
 
-  // persist project-specific hints
+  // persist cwd-specific hints
   utils.sync(this, 'hints', function() {
     debug('creating hints store');
     if (typeof hints === 'undefined') {
-      var name = path.basename(app.options.cwd || process.cwd());
-      hints = app.store.create(name + '/hints');
+      hints = options.hints || new utils.Store(path.join('question-store', process.cwd(), 'hints'));
       debug('created hints store');
     }
     return hints;
