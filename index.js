@@ -65,7 +65,7 @@ QuestionsStore.prototype.createStores = function(app, options) {
 
   // load common-config
   utils.sync(this, 'common', function() {
-    return utils.config;
+    return utils.common;
   });
 
   // persist project-specific answers
