@@ -29,17 +29,17 @@
     "is-answer": "^0.1.0",
     "lazy-cache": "^2.0.1",
     "project-name": "^0.2.6",
-    "question-cache": "^0.5.1"
+    "question-cache": "^0.6.0"
   },
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-eslint": "^3.0.1",
-    "gulp-format-md": "^0.1.9",
-    "gulp-istanbul": "^1.0.0",
-    "gulp-mocha": "^2.2.0",
+    "gulp-format-md": "^0.1.10",
+    "gulp-istanbul": "^1.1.0",
+    "gulp-mocha": "^3.0.1",
     "gulp-unused": "^0.1.2",
     "minimist": "^1.2.0",
-    "mocha": "^2.5.3",
+    "mocha": "^3.0.2",
     "question-force": "^0.1.0",
     "question-match": "^0.1.2"
   },
