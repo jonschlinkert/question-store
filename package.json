@@ -11,9 +11,7 @@
   "license": "MIT",
   "files": [
     "index.js",
-    "lib",
-    "LICENSE",
-    "README.md"
+    "lib"
   ],
   "main": "index.js",
   "engines": {
@@ -29,7 +27,7 @@
     "is-answer": "^0.1.0",
     "lazy-cache": "^2.0.1",
     "project-name": "^0.2.6",
-    "question-cache": "^0.6.0"
+    "question-cache": "^0.7.0"
   },
   "devDependencies": {
     "gulp": "^3.9.1",
