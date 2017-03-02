@@ -82,7 +82,7 @@ QuestionsStore.prototype.createStores = function(app, options) {
   utils.sync(this, 'hints', function() {
     debug('creating hints store');
     if (typeof hints === 'undefined') {
-      hints = options.hints || new utils.Store(path.join('question-store', process.cwd(), 'hints'));
+      hints = options.hints || new utils.Store(path.join('question-store', utils.slugify(process.cwd()), 'hints'));
       debug('created hints store');
     }
     return hints;
